@@ -41,3 +41,17 @@ fn chart_does_not_exist() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn validate_accepts_multiple_files() -> Result<()> {
+    let mut cmd = Command::cargo_bin("helm-templexer")?;
+
+    cmd.current_dir("tests/data")
+        .arg("validate")
+        .arg("config_example.toml")
+        .arg("config_example.yaml")
+        .arg("config_example.json");
+    cmd.assert().success();
+
+    Ok(())
+}

@@ -19,7 +19,9 @@ impl ValidateCmd {
     pub fn run(&mut self) -> Result<()> {
         debug!("validation options: {:?}", self.opts);
 
-        Config::load(&self.opts.input_file)?.validate(&ValidationOpts::default())?;
+        for file in &self.opts.input_files {
+            Config::load(&file)?.validate(&ValidationOpts::default())?;
+        }
 
         Ok(())
     }
