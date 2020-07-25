@@ -35,9 +35,8 @@ enum SubCmd {
 
 #[derive(StructOpt, Debug)]
 pub struct ValidateCmdOpts {
-    // TODO support passing in multiple files?
-    /// Configuration file to validate (supported formats: toml, yaml, json)
-    input_file: PathBuf,
+    /// Configuration file(s) to validate (supported formats: toml, yaml, json)
+    input_files: Vec<PathBuf>,
 
     #[structopt(short, long, about = "Skip validation if `enabled` is set to false")]
     skip_disabled: bool,
