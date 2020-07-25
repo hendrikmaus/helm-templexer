@@ -1,0 +1,205 @@
+use anyhow::Result;
+use serde::Deserialize;
+use std::path::PathBuf;
+
+#[derive(Deserialize, Debug)]
+pub struct Config {
+    /// Schema version to use
+    pub version: String,
+
+    /// Activate/deactivate rendering of contained deployments
+    pub enabled: bool,
+
+    /// Chart to use
+    pub chart: PathBuf,
+
+    /// Namespace to pass via `--namespace`
+    pub namespace: Option<String>,
+
+    /// Release name passed to `helm template` call
+    pub release_name: String,
+
+    /// Output path to write manifests to; passed via `---output-dir`
+    pub output_path: PathBuf,
+
+    /// Use any other option that `helm template` supports
+    /// Contents are not validated against actual `helm` options
+    pub additional_options: Option<Vec<String>>,
+
+    /// Value files to pass via `--values`
+    pub values: Option<Vec<PathBuf>>,
+
+    /// List of deployments to render given Chart
+    pub deployments: Vec<Deployment>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Deployment {
+    /// Name of the deployment, used to create the output path
+    pub name: String,
+
+    /// Activate/deactivate rendering of this specific deployment
+    pub enabled: Option<bool>,
+
+    /// Override the release name passed to `helm template`
+    pub release_name: Option<String>,
+
+    /// Append any additional options to the top level options
+    pub additional_options: Option<Vec<String>>,
+
+    /// Append value files to the top level value files
+    pub values: Option<Vec<PathBuf>>,
+}
+
+pub struct ValidationOpts {
+    pub skip_disabled: bool,
+}
+
+impl Default for ValidationOpts {
+    fn default() -> Self {
+        Self {
+            skip_disabled: false,
+        }
+    }
+}
+
+impl Config {
+    /// Load given configuration file and deserialize it.
+    /// Does not call Config::validate - only checks the path and runs Serde
+    pub fn load(file: &PathBuf) -> Result<Config> {
+        Self::file_exists_and_readable(&file)?;
+
+        match serde_any::from_file(file) {
+            Ok(cfg) => Ok(cfg),
+            Err(err) => Err(anyhow!(
+                "Failed to load configuration from file, because:\n{}",
+                err
+            )),
+        }
+    }
+
+    /// Validate the loaded configuration file
+    pub fn validate(&self, opts: &ValidationOpts) -> Result<()> {
+        if opts.skip_disabled && !self.enabled {
+            warn!("Skipped validation of disabled file");
+            return Ok(());
+        }
+
+        self.chart_exists_and_readable()?;
+        self.value_files_exist_and_readable()?;
+        self.check_schema_version()?;
+
+        Ok(())
+    }
+
+    /// Check whether the given input file exists and is readable
+    fn file_exists_and_readable(input_file: &PathBuf) -> Result<()> {
+        if !input_file.exists() {
+            bail!("File {:?} does not exist or is not readable", input_file);
+        }
+
+        Ok(())
+    }
+
+    /// Assert that the designated Helm chart can be found on disk
+    fn chart_exists_and_readable(&self) -> Result<()> {
+        if !self.chart.exists() {
+            bail!("Chart {:?} does not exist or is not readable", self.chart);
+        }
+
+        Ok(())
+    }
+
+    /// Find all references value files in the given config and check if they exist
+    fn value_files_exist_and_readable(&self) -> Result<()> {
+        match &self.values {
+            Some(values) => Self::check_pathbuf_vec(&values)?,
+            None => debug!("top level values key is empty"),
+        }
+
+        for deployment in &self.deployments {
+            match &deployment.values {
+                Some(values) => Self::check_pathbuf_vec(&values)?,
+                None => debug!("top level values key is empty"),
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Helper to iterate a vector of paths and check their existence
+    fn check_pathbuf_vec(files: &[PathBuf]) -> Result<()> {
+        for f in files {
+            if !f.exists() {
+                bail!("values file {:?} does not exist or is not readable", f)
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check the given schema version; should be extended once multiple are available
+    fn check_schema_version(&self) -> Result<()> {
+        if self.version != "v1".to_string() {
+            bail!("invalid schema version used; only 'v1' is supported")
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn input_file_does_not_exist() {
+        // TODO feels more like an integration test, rather than a unit test
+        Config::load(&PathBuf::from("does-not-exist")).unwrap();
+    }
+
+    #[test]
+    fn input_file_exists() {
+        // TODO feels more like an integration test, rather than a unit test
+        Config::load(&PathBuf::from("tests/data/config_example.toml")).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn schema_version_must_be_v1() {
+        let cfg = Config {
+            version: "v2".to_string(),
+            enabled: false,
+            chart: Default::default(),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![],
+        };
+
+        cfg.check_schema_version().unwrap();
+    }
+
+    #[test]
+    fn disabled_files_can_be_skipped_during_validation() {
+        let cfg = Config {
+            version: "invalid_version".to_string(),
+            enabled: false,
+            chart: Default::default(),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![],
+        };
+
+        cfg.validate(&ValidationOpts {
+            skip_disabled: true,
+        })
+        .unwrap();
+    }
+}

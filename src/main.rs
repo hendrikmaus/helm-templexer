@@ -1,13 +1,18 @@
-mod validate;
+mod config;
+mod validate_cmd;
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate anyhow;
 
+use anyhow::{Context, Result};
 use env_logger::Builder;
 use log::LevelFilter;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use structopt_flags::GetWithDefault;
+use validate_cmd::ValidateCmd;
 
 #[derive(StructOpt, Debug)]
 #[structopt(
@@ -30,17 +35,25 @@ enum SubCmd {
 
 #[derive(StructOpt, Debug)]
 pub struct ValidateCmdOpts {
-    /// Configuration file to validate
+    // TODO support passing in multiple files?
+    /// Configuration file to validate (supported formats: toml, yaml, json)
     input_file: PathBuf,
+
+    #[structopt(short, long, about = "Skip validation if `enabled` is set to false")]
+    skip_disabled: bool,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::from_args();
 
     let log_level = args.verbose.get_with_default(LevelFilter::Info);
     Builder::from_default_env().filter_level(log_level).init();
 
     match args.cmd {
-        SubCmd::Validate(opts) => validate::handle(opts),
-    }
+        SubCmd::Validate(opts) => ValidateCmd::new(opts)
+            .run()
+            .context("Configuration failed validation")?,
+    };
+
+    Ok(())
 }
