@@ -14,7 +14,7 @@ impl RenderCmd {
 
     /// Main entry point to run the rendering process
     /// will return nothing on the happy path and descriptive errors on failure
-    pub fn run(&mut self) -> Result<()> {
+    pub fn run(&self) -> Result<()> {
         debug!("render options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
