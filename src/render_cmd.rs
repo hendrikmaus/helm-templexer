@@ -18,7 +18,8 @@ impl RenderCmd {
         debug!("render options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
-            Config::load(&file)?.validate(&ValidationOpts::default())?;
+            let cfg = Config::load(&file)?;
+            cfg.validate(&ValidationOpts::default());
         }
 
         Ok(())
