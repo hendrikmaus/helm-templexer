@@ -1,0 +1,30 @@
+version: v1
+enabled: true
+chart: nginx-chart
+namespace: my-namespace
+release_name: my-app-edge
+output_path: manifests
+additional_options:
+  - '--skip-crds'
+  - '--no-hooks'
+values:
+  - ../../values/default.yaml
+deployments:
+  - name: edge-eu-w4
+    values:
+      - ../../values/my-app/values-edge.yaml
+    additional_options:
+      - '--set image.tag=latest'
+  - name: next-edge-eu-w4
+    enabled: false
+    release_name: my-app-edge-next
+    values:
+      - ../../values/my-app/values-edge.yaml
+      - ../../values/my-app/values-next-edge.yaml
+  - name: stage-eu-w4
+    values:
+      - ../../values/my-app/values-stage.yaml
+  - name: prod-eu-w4
+    values:
+      - ../../values/my-app/values-prod.yaml
+      - ../../values/my-app/values-prod-eu-w4.yaml
