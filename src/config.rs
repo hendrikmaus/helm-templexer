@@ -240,8 +240,6 @@ mod tests {
             skip_disabled: true,
         })
         .unwrap();
-
-        // todo assert something
     }
 
     #[test]
