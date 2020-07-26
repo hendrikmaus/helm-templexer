@@ -114,13 +114,13 @@ impl Config {
     fn value_files_exist_and_readable(&self) -> Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
-            None => debug!("top level values key is empty"),
+            None => (),
         }
 
         for deployment in &self.deployments {
             match &deployment.values {
                 Some(values) => Self::check_pathbuf_vec(&values)?,
-                None => debug!("top level values key is empty"),
+                None => (),
             }
         }
 
