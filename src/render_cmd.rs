@@ -143,11 +143,13 @@ impl RenderCmd {
     fn exec_plan(&self, plan: &Plan) -> Result<()> {
         for (deployment, cmd) in &plan.commands {
             debug!(
-                "executing planned command for deployment {}:/n/t{:#?}",
-                deployment, cmd
+                "executing planned command for deployment {}:\n \t {:#?}",
+                deployment,
+                cmd.join(" ")
             );
 
             // todo run helm, handle errors
+            unimplemented!();
         }
 
         Ok(())
