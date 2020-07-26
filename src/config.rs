@@ -114,13 +114,13 @@ impl Config {
     fn value_files_exist_and_readable(&self) -> Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
-            None => debug!("top level values key is empty"),
+            None => (),
         }
 
         for deployment in &self.deployments {
             match &deployment.values {
                 Some(values) => Self::check_pathbuf_vec(&values)?,
-                None => debug!("top level values key is empty"),
+                None => (),
             }
         }
 
@@ -140,7 +140,7 @@ impl Config {
 
     /// Check the given schema version; should be extended once multiple are available
     fn check_schema_version(&self) -> Result<()> {
-        if self.version != "v1".to_string() {
+        if self.version != "v1" {
             bail!("invalid schema version used; only 'v1' is supported")
         }
 
@@ -201,5 +201,11 @@ mod tests {
             skip_disabled: true,
         })
         .unwrap();
+    }
+
+    #[test]
+    #[ignore]
+    fn fail_if_all_deployments_are_disabled() {
+        unimplemented!();
     }
 }

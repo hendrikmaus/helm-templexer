@@ -16,7 +16,7 @@ impl ValidateCmd {
 
     /// Main entry point to run the validator
     /// will return nothing on the happy path and descriptive errors on failure
-    pub fn run(&mut self) -> Result<()> {
+    pub fn run(&self) -> Result<()> {
         debug!("validation options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
