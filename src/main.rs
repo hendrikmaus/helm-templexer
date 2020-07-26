@@ -1,20 +1,23 @@
-mod config;
-mod render_cmd;
-mod validate_cmd;
-
-#[macro_use]
-extern crate log;
 #[macro_use]
 extern crate anyhow;
+#[macro_use]
+extern crate log;
 
-use crate::render_cmd::RenderCmd;
+use std::path::PathBuf;
+
 use anyhow::{Context, Result};
 use env_logger::Builder;
 use log::LevelFilter;
-use std::path::PathBuf;
 use structopt::StructOpt;
 use structopt_flags::GetWithDefault;
+
 use validate_cmd::ValidateCmd;
+
+use crate::render_cmd::RenderCmd;
+
+mod config;
+mod render_cmd;
+mod validate_cmd;
 
 #[derive(StructOpt, Debug)]
 #[structopt(
