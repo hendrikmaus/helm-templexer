@@ -1,0 +1,16 @@
+version = "v1"
+enabled = true
+chart = "tests/data/nginx-chart"
+namespace = "my-namespace"
+release_name = "my-app-edge"
+output_path = "manifests"
+additional_options = [
+  "--skip-crds",
+  "--no-hooks",
+]
+
+[[deployments]]
+name = "edge-eu-w4"
+additional_options = [
+  "--set image.tag=latest",
+]

@@ -67,7 +67,7 @@ impl Config {
     /// Load given configuration file and deserialize it.
     /// Does not call Config::validate - only checks the path and runs Serde
     pub fn load(file: &PathBuf) -> Result<Config> {
-        Self::file_exists_and_readable(&file)?;
+        Self::check_file_exists_and_readable(&file)?;
 
         match serde_any::from_file(file) {
             Ok(cfg) => Ok(cfg),
@@ -85,15 +85,16 @@ impl Config {
             return Ok(());
         }
 
-        self.chart_exists_and_readable()?;
-        self.value_files_exist_and_readable()?;
+        self.check_chart_exists_and_readable()?;
+        self.check_value_files_exist_and_readable()?;
         self.check_schema_version()?;
+        self.check_if_at_least_one_deployment_is_enabled()?;
 
         Ok(())
     }
 
     /// Check whether the given input file exists and is readable
-    fn file_exists_and_readable(input_file: &PathBuf) -> Result<()> {
+    fn check_file_exists_and_readable(input_file: &PathBuf) -> Result<()> {
         if !input_file.exists() {
             bail!("File {:?} does not exist or is not readable", input_file);
         }
@@ -102,7 +103,7 @@ impl Config {
     }
 
     /// Assert that the designated Helm chart can be found on disk
-    fn chart_exists_and_readable(&self) -> Result<()> {
+    fn check_chart_exists_and_readable(&self) -> Result<()> {
         if !self.chart.exists() {
             bail!("Chart {:?} does not exist or is not readable", self.chart);
         }
@@ -111,7 +112,7 @@ impl Config {
     }
 
     /// Find all references value files in the given config and check if they exist
-    fn value_files_exist_and_readable(&self) -> Result<()> {
+    fn check_value_files_exist_and_readable(&self) -> Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
             None => (),
@@ -142,6 +143,32 @@ impl Config {
     fn check_schema_version(&self) -> Result<()> {
         if self.version != "v1" {
             bail!("invalid schema version used; only 'v1' is supported")
+        }
+
+        Ok(())
+    }
+
+    /// Go through all deployments and check if at least one of them is enabled
+    fn check_if_at_least_one_deployment_is_enabled(&self) -> Result<()> {
+        let mut all_disabled = true;
+
+        for d in &self.deployments {
+            match d.enabled {
+                Some(e) => {
+                    if e {
+                        all_disabled = false;
+                        break;
+                    }
+                }
+                None => {
+                    all_disabled = false;
+                    break;
+                }
+            }
+        }
+
+        if all_disabled {
+            bail!("All deployments are disabled")
         }
 
         Ok(())
@@ -177,7 +204,13 @@ mod tests {
             output_path: Default::default(),
             additional_options: None,
             values: None,
-            deployments: vec![],
+            deployments: vec![Deployment {
+                name: "edge".to_string(),
+                enabled: Option::from(true),
+                release_name: None,
+                additional_options: None,
+                values: None,
+            }],
         };
 
         cfg.check_schema_version().unwrap();
@@ -194,7 +227,13 @@ mod tests {
             output_path: Default::default(),
             additional_options: None,
             values: None,
-            deployments: vec![],
+            deployments: vec![Deployment {
+                name: "edge".to_string(),
+                enabled: Option::from(true),
+                release_name: None,
+                additional_options: None,
+                values: None,
+            }],
         };
 
         cfg.validate(&ValidationOpts {
@@ -204,8 +243,35 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[should_panic]
     fn fail_if_all_deployments_are_disabled() {
-        unimplemented!();
+        let cfg = Config {
+            version: "v1".to_string(),
+            enabled: false,
+            chart: Default::default(),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![
+                Deployment {
+                    name: "edge".to_string(),
+                    enabled: Option::from(false),
+                    release_name: None,
+                    additional_options: None,
+                    values: None,
+                },
+                Deployment {
+                    name: "stage".to_string(),
+                    enabled: Option::from(false),
+                    release_name: None,
+                    additional_options: None,
+                    values: None,
+                },
+            ],
+        };
+
+        cfg.validate(&ValidationOpts::default()).unwrap();
     }
 }
