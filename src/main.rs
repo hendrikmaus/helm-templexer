@@ -57,6 +57,13 @@ pub struct ValidateCmdOpts {
 pub struct RenderCmdOpts {
     /// Configuration file(s) to render deployments for (supported formats: toml, yaml, json)
     input_files: Vec<PathBuf>,
+
+    #[structopt(
+        short,
+        long,
+        about = "(not implemented) Optional helm binary to use; defaults to the binary found in the PATH or fails, if none is found"
+    )]
+    helm_bin: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {

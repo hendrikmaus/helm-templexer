@@ -3,7 +3,7 @@
   "enabled": true,
   "chart": "nginx-chart",
   "namespace": "my-namespace",
-  "release_name": "my-app-edge",
+  "release_name": "my-app",
   "output_path": "manifests",
   "additional_options": [
     "--skip-crds",
@@ -25,7 +25,6 @@
     {
       "name": "next-edge-eu-w4",
       "enabled": false,
-      "release_name": "my-app-edge-next",
       "values": [
         "nginx-chart/values/edge.yaml",
         "nginx-chart/values/next-edge.yaml"
@@ -39,6 +38,7 @@
     },
     {
       "name": "prod-eu-w4",
+      "release_name": "my-app-prod-eu-w4",
       "values": [
         "nginx-chart/values/prod.yaml",
         "nginx-chart/values/prod-eu-w4.yaml"
