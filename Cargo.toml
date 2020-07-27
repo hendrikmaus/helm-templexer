@@ -1,10 +1,19 @@
 [package]
 name = "helm-templexer"
-version = "0.1.0-alpha"
+version = "0.1.1-alpha"
 authors = ["Hendrik Maus <aidentailor@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Render Kubernetes Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease"
+license = "MIT"
+keywords = ["kubernetes", "helm"]
+readme = "README.md"
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "helm-templexer"
+path = "src/main.rs"
+doc = false
 
 [dependencies]
 structopt = "0.3.15"
