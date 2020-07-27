@@ -49,10 +49,7 @@ impl RenderCmd {
             let plan = self.plan(&cfg)?;
 
             if plan.skip {
-                warn!(
-                    "given configuration '{:?}' is disabled, skipping ...",
-                    &file
-                );
+                warn!("config is disabled (skipped)");
                 continue;
             }
 
@@ -72,9 +69,11 @@ impl RenderCmd {
             output_paths: Default::default(),
         };
 
-        if !cfg.enabled {
-            plan.skip = true;
-            return Ok(plan);
+        if let Some(enabled) = cfg.enabled {
+            if !enabled {
+                plan.skip = true;
+                return Ok(plan);
+            }
         }
 
         // todo is it really that hard to get from PathBuf to String?
@@ -252,7 +251,7 @@ mod tests {
         let cfg = Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: false,
+            enabled: Option::from(false),
             chart: Default::default(),
             namespace: None,
             release_name: "".to_string(),
@@ -278,7 +277,7 @@ mod tests {
         let cfg = Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: true,
+            enabled: Option::from(true),
             chart: PathBuf::from("charts/some-chart"),
             namespace: Option::from("default".to_string()),
             release_name: "some-release".to_string(),
@@ -318,7 +317,7 @@ mod tests {
         let cfg = Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: true,
+            enabled: Option::from(true),
             chart: PathBuf::from("charts/some-chart"),
             namespace: None,
             release_name: "some-release".to_string(),
@@ -350,7 +349,7 @@ mod tests {
         let cfg = Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: true,
+            enabled: Option::from(true),
             chart: PathBuf::from("charts/some-chart"),
             namespace: None,
             release_name: "some-release".to_string(),

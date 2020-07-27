@@ -11,7 +11,7 @@ pub struct Config {
     pub helm_version: Option<String>,
 
     /// Activate/deactivate rendering of contained deployments
-    pub enabled: bool,
+    pub enabled: Option<bool>,
 
     /// Chart to use
     pub chart: PathBuf,
@@ -83,9 +83,11 @@ impl Config {
 
     /// Validate the loaded configuration file
     pub fn validate(&self, opts: &ValidationOpts) -> Result<()> {
-        if opts.skip_disabled && !self.enabled {
-            warn!("Skipped validation of disabled file");
-            return Ok(());
+        if let Some(enabled) = self.enabled {
+            if !enabled && opts.skip_disabled {
+                warn!("Skipped validation of disabled file");
+                return Ok(());
+            }
         }
 
         self.check_chart_exists_and_readable()?;
@@ -201,7 +203,7 @@ mod tests {
         let cfg = Config {
             version: "v2".to_string(),
             helm_version: None,
-            enabled: false,
+            enabled: Option::from(false),
             chart: Default::default(),
             namespace: None,
             release_name: "".to_string(),
@@ -225,7 +227,7 @@ mod tests {
         let cfg = Config {
             version: "invalid_version".to_string(),
             helm_version: None,
-            enabled: false,
+            enabled: Option::from(false),
             chart: Default::default(),
             namespace: None,
             release_name: "".to_string(),
@@ -253,7 +255,7 @@ mod tests {
         let cfg = Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: false,
+            enabled: Option::from(false),
             chart: Default::default(),
             namespace: None,
             release_name: "".to_string(),
