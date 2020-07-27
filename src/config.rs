@@ -7,6 +7,9 @@ pub struct Config {
     /// Schema version to use
     pub version: String,
 
+    /// (not implemented) Optional Helm SemVer version constraint to validate against
+    pub helm_version: Option<String>,
+
     /// Activate/deactivate rendering of contained deployments
     pub enabled: bool,
 
@@ -197,6 +200,7 @@ mod tests {
     fn schema_version_must_be_v1() {
         let cfg = Config {
             version: "v2".to_string(),
+            helm_version: None,
             enabled: false,
             chart: Default::default(),
             namespace: None,
@@ -220,6 +224,7 @@ mod tests {
     fn disabled_files_can_be_skipped_during_validation() {
         let cfg = Config {
             version: "invalid_version".to_string(),
+            helm_version: None,
             enabled: false,
             chart: Default::default(),
             namespace: None,
@@ -247,6 +252,7 @@ mod tests {
     fn fail_if_all_deployments_are_disabled() {
         let cfg = Config {
             version: "v1".to_string(),
+            helm_version: None,
             enabled: false,
             chart: Default::default(),
             namespace: None,
