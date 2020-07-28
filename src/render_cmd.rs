@@ -76,7 +76,6 @@ impl RenderCmd {
             }
         }
 
-        // todo is it really that hard to get from PathBuf to String?
         let chart = match cfg.chart.to_str() {
             Some(s) => s,
             None => bail!(
@@ -169,7 +168,6 @@ impl RenderCmd {
                 cmd.join(" ")
             );
 
-            // todo allow the user to disable cleanup of the output path?
             match &plan.output_paths.get(deployment) {
                 Some(p) => {
                     debug!("cleaning up output path: {:?}", p);
@@ -220,22 +218,17 @@ impl RenderCmd {
     }
 
     /// Utility to turn an option for a vector of pathbufs into a vector of strings
-    /// todo is it really that hard to go from a Vec<PathBuf> to a Vec<String>?
     fn get_values_as_strings(&self, input: &Option<Vec<PathBuf>>) -> Result<Vec<String>> {
         let mut buffer: Vec<String> = vec![];
 
-        match input {
-            Some(items) => {
-                for i in items {
-                    match i.clone().into_os_string().into_string() {
-                        Ok(s) => buffer.push(s),
-                        Err(s) => bail!("failed to convert {:?} to string", s),
-                    }
+        if let Some(items) = input {
+            for i in items {
+                match i.to_str() {
+                    Some(s) => buffer.push(s.to_string()),
+                    None => bail!("failed to convert {:?} to string", i),
                 }
             }
-            None => (),
         }
-
         Ok(buffer)
     }
 }
