@@ -54,16 +54,9 @@ pub struct Deployment {
     pub values: Option<Vec<PathBuf>>,
 }
 
+#[derive(Default)]
 pub struct ValidationOpts {
     pub skip_disabled: bool,
-}
-
-impl Default for ValidationOpts {
-    fn default() -> Self {
-        Self {
-            skip_disabled: false,
-        }
-    }
 }
 
 impl Config {
