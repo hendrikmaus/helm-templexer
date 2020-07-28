@@ -77,17 +77,17 @@ impl RenderCmd {
         }
 
         // todo is it really that hard to get from PathBuf to String?
-        let chart = match cfg.chart.clone().into_os_string().into_string() {
-            Ok(s) => s,
-            Err(_) => bail!(
+        let chart = match cfg.chart.to_str() {
+            Some(s) => s,
+            None => bail!(
                 "failed to convert given chart path {:?} to string",
                 cfg.chart
             ),
         };
 
-        let output_dir = match cfg.output_path.clone().into_os_string().into_string() {
-            Ok(s) => s,
-            Err(_) => bail!(
+        let output_dir = match cfg.output_path.to_str() {
+            Some(s) => s,
+            None => bail!(
                 "failed to convert given output_path {:?} to string",
                 cfg.output_path
             ),
@@ -103,7 +103,7 @@ impl RenderCmd {
         base_cmd.push("helm".to_string());
         base_cmd.push("template".to_string());
         base_cmd.push(cfg.release_name.clone());
-        base_cmd.push(chart);
+        base_cmd.push(chart.to_string());
 
         match &cfg.namespace {
             Some(namespace) => base_cmd.push(format!("--namespace={}", namespace)),
