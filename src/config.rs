@@ -1,5 +1,6 @@
 use anyhow::Result;
 use serde::Deserialize;
+use std::path::Path;
 use std::path::PathBuf;
 
 #[derive(Deserialize, Debug)]
@@ -54,23 +55,16 @@ pub struct Deployment {
     pub values: Option<Vec<PathBuf>>,
 }
 
+#[derive(Default)]
 pub struct ValidationOpts {
     pub skip_disabled: bool,
-}
-
-impl Default for ValidationOpts {
-    fn default() -> Self {
-        Self {
-            skip_disabled: false,
-        }
-    }
 }
 
 impl Config {
     /// Load given configuration file and deserialize it.
     /// Does not call Config::validate - only checks the path and runs Serde
-    pub fn load(file: &PathBuf) -> Result<Config> {
-        Self::check_file_exists_and_readable(&file)?;
+    pub fn load<S: AsRef<Path>>(file: S) -> Result<Config> {
+        Self::check_file_exists_and_readable(&file.as_ref())?;
 
         match serde_any::from_file(file) {
             Ok(cfg) => Ok(cfg),
@@ -99,7 +93,7 @@ impl Config {
     }
 
     /// Check whether the given input file exists and is readable
-    fn check_file_exists_and_readable(input_file: &PathBuf) -> Result<()> {
+    fn check_file_exists_and_readable(input_file: &Path) -> Result<()> {
         if !input_file.exists() {
             bail!("File {:?} does not exist or is not readable", input_file);
         }
@@ -188,13 +182,13 @@ mod tests {
     #[should_panic]
     fn input_file_does_not_exist() {
         // TODO feels more like an integration test, rather than a unit test
-        Config::load(&PathBuf::from("does-not-exist")).unwrap();
+        Config::load("does-not-exist").unwrap();
     }
 
     #[test]
     fn input_file_exists() {
         // TODO feels more like an integration test, rather than a unit test
-        Config::load(&PathBuf::from("tests/data/config_example.toml")).unwrap();
+        Config::load("tests/data/config_example.toml").unwrap();
     }
 
     #[test]
