@@ -1,11 +1,10 @@
-use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
 #[test]
-fn render_config_example() -> Result<()> {
+fn render_config_example() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.current_dir("tests/data")
