@@ -111,7 +111,7 @@ impl Config {
         Ok(())
     }
 
-    /// Find all references value files in the given config and check if they exist
+    /// Find all referenced value files in the given config and check if they exist
     fn check_value_files_exist_and_readable(&self) -> anyhow::Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
@@ -119,6 +119,14 @@ impl Config {
         }
 
         for deployment in &self.deployments {
+            match deployment.enabled {
+                Some(enabled) => {
+                    if !enabled {
+                        continue;
+                    }
+                }
+                None => (),
+            }
             match &deployment.values {
                 Some(values) => Self::check_pathbuf_vec(&values)?,
                 None => (),
@@ -236,6 +244,42 @@ mod tests {
                 additional_options: None,
                 values: None,
             }],
+        };
+
+        cfg.validate(&ValidationOpts {
+            skip_disabled: true,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn disabled_deployments_can_be_skipped_during_validation() {
+        let cfg = Config {
+            version: "v1".to_string(),
+            helm_version: None,
+            enabled: Option::from(true),
+            chart: PathBuf::from("tests/data/nginx-chart"),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![
+                Deployment {
+                    name: "edge".to_string(),
+                    enabled: Option::from(true),
+                    release_name: None,
+                    additional_options: None,
+                    values: None,
+                },
+                Deployment {
+                    name: "stage".to_string(),
+                    enabled: Option::from(false),
+                    release_name: None,
+                    additional_options: None,
+                    values: Option::from(vec![PathBuf::from("does-not-exist")]),
+                },
+            ],
         };
 
         cfg.validate(&ValidationOpts {
