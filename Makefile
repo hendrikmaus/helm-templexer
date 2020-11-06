@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-VERSION         ?= $(shell cat "$(CURDIR)/VERSION")
+VERSION         ?= $(shell cat Cargo.toml | grep -Po 'version = "\K([0-9].[0-9].[0-9])')
 DOCKER_REGISTRY ?= hendrikmaus
 DOCKER_IMAGE    ?= helm-templexer
 DOCKER_TAG      ?= $(VERSION)
