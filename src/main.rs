@@ -64,6 +64,10 @@ pub struct RenderCmdOpts {
         about = "(not implemented) Optional helm binary to use; defaults to the binary found in the PATH or fails, if none is found"
     )]
     helm_bin: Option<PathBuf>,
+
+    /// Pass additional options to the underlying 'helm template' call, e.g. '--set-string image.tag=${revision}'
+    #[structopt(short, long, multiple = true)]
+    additional_options: Option<Vec<String>>,
 }
 
 fn main() -> Result<()> {
