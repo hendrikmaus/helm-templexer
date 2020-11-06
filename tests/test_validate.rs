@@ -1,10 +1,9 @@
-use anyhow::Result;
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use std::process::Command;
 
 #[test]
-fn file_is_valid() -> Result<()> {
+fn file_is_valid() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.current_dir("tests/data")
@@ -17,7 +16,7 @@ fn file_is_valid() -> Result<()> {
 }
 
 #[test]
-fn file_does_not_exist() -> Result<()> {
+fn file_does_not_exist() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.arg("validate").arg("this-file-does-not-exist");
@@ -29,7 +28,7 @@ fn file_does_not_exist() -> Result<()> {
 }
 
 #[test]
-fn chart_does_not_exist() -> Result<()> {
+fn chart_does_not_exist() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.current_dir("tests/data")
@@ -43,7 +42,7 @@ fn chart_does_not_exist() -> Result<()> {
 }
 
 #[test]
-fn validate_accepts_multiple_files() -> Result<()> {
+fn validate_accepts_multiple_files() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.current_dir("tests/data")

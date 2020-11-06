@@ -1,6 +1,7 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
-use anyhow::Result;
+use anyhow::bail;
+use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
@@ -37,7 +38,7 @@ impl RenderCmd {
 
     /// Main entry point to run the rendering process
     /// will return nothing on the happy path and descriptive errors on failure
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&self) -> anyhow::Result<()> {
         debug!("render options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
@@ -62,7 +63,7 @@ impl RenderCmd {
     }
 
     /// Create a plan of commands to execute
-    fn plan(&self, cfg: &Config) -> Result<Plan> {
+    fn plan(&self, cfg: &Config) -> anyhow::Result<Plan> {
         let mut plan = Plan {
             skip: false,
             commands: Default::default(),
@@ -116,6 +117,11 @@ impl RenderCmd {
             None => (),
         }
 
+        match &self.opts.additional_options {
+            Some(opts) => base_cmd.extend(opts.clone()),
+            None => (),
+        }
+
         for d in &cfg.deployments {
             if let Some(enabled) = d.enabled {
                 if !enabled {
@@ -158,7 +164,7 @@ impl RenderCmd {
     }
 
     /// Execute the commands in the given plan
-    fn exec_plan(&self, plan: &Plan) -> Result<()> {
+    fn exec_plan(&self, plan: &Plan) -> anyhow::Result<()> {
         for (deployment, cmd) in &plan.commands {
             info!(" - {}", deployment);
 
@@ -218,7 +224,7 @@ impl RenderCmd {
     }
 
     /// Utility to turn an option for a vector of pathbufs into a vector of strings
-    fn get_values_as_strings(&self, input: &Option<Vec<PathBuf>>) -> Result<Vec<String>> {
+    fn get_values_as_strings(&self, input: &Option<Vec<PathBuf>>) -> anyhow::Result<Vec<String>> {
         let mut buffer: Vec<String> = vec![];
 
         if let Some(items) = input {
@@ -258,6 +264,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -290,6 +297,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -330,6 +338,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -362,12 +371,56 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
         let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template edge-release charts/some-chart \
             --output-dir=manifests/edge/edge-release";
+        let expected_helm_cmd: Vec<String> = expected_helm_cmd
+            .split_whitespace()
+            .map(String::from)
+            .collect();
+
+        assert_eq!(&expected_helm_cmd, res.commands.get("edge").unwrap());
+    }
+
+    #[test]
+    fn render_can_accept_additional_options_via_cli_option() {
+        let cfg = Config {
+            version: "v1".to_string(),
+            helm_version: None,
+            enabled: Option::from(true),
+            chart: PathBuf::from("charts/some-chart"),
+            namespace: Option::from("default".to_string()),
+            release_name: "some-release".to_string(),
+            output_path: PathBuf::from("manifests"),
+            additional_options: Option::from(vec!["--no-hooks".to_string(), "--debug".to_string()]),
+            values: Option::from(vec![PathBuf::from("some-base.yaml")]),
+            deployments: vec![Deployment {
+                name: "edge".to_string(),
+                enabled: Option::from(true),
+                release_name: None,
+                additional_options: None,
+                values: None,
+            }],
+        };
+
+        let cmd = RenderCmd {
+            opts: RenderCmdOpts {
+                input_files: vec![],
+                helm_bin: None,
+                additional_options: Option::from(
+                    vec!["--set-string=image.tag=424242a".to_string()],
+                ),
+            },
+        };
+
+        let res = cmd.plan(&cfg).unwrap();
+        let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
+            --values=some-base.yaml --no-hooks --debug --set-string=image.tag=424242a \
+            --output-dir=manifests/edge/some-release";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
