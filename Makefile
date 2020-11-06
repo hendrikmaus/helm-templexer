@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-VERSION         ?= $(shell cat Cargo.toml | grep -Po 'version = "\K([0-9].[0-9].[0-9])')
+VERSION         ?= $(shell cat Cargo.toml | grep -Po 'version = "\K([0-9].[0-9].[0-9][\-a-z]+)')
 DOCKER_REGISTRY ?= hendrikmaus
 DOCKER_IMAGE    ?= helm-templexer
 DOCKER_TAG      ?= $(VERSION)
