@@ -55,6 +55,16 @@ Deployments can override several top-level fields:
 | `additional_options` | Additional options, as seen above, but specific to this deployment | optional      | `[]`        |                |
 | `values`             | Value files to use for this deployment                             | optional      | `[]`        |                |
 
+## Additional Options to The Render Command
+
+Use `--additional-options` to pass data to the underlying `helm template` call. Beware that these additional options get added to *every* call, i.e. to each deployment.
+
+A common use case we found was to provide the container tag:
+
+```shell script
+helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
+```
+
 ## Installation
 
 Helm Templexer is written in [Rust](http://www.rust-lang.org/). You will need `rustc` version 1.35.0 or higher. The recommended way to install Rust is from the official download page. Once you have it set up, a simple `make install` will compile `helm-templexer` and install it into `$HOME/.cargo/bin`.
