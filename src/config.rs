@@ -111,7 +111,7 @@ impl Config {
         Ok(())
     }
 
-    /// Find all references value files in the given config and check if they exist
+    /// Find all referenced value files in the given config and check if they exist
     fn check_value_files_exist_and_readable(&self) -> anyhow::Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
