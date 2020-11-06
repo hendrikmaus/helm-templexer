@@ -1,6 +1,7 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
-use anyhow::Result;
+use anyhow::bail;
+use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
@@ -37,7 +38,7 @@ impl RenderCmd {
 
     /// Main entry point to run the rendering process
     /// will return nothing on the happy path and descriptive errors on failure
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&self) -> anyhow::Result<()> {
         debug!("render options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
@@ -62,7 +63,7 @@ impl RenderCmd {
     }
 
     /// Create a plan of commands to execute
-    fn plan(&self, cfg: &Config) -> Result<Plan> {
+    fn plan(&self, cfg: &Config) -> anyhow::Result<Plan> {
         let mut plan = Plan {
             skip: false,
             commands: Default::default(),
@@ -158,7 +159,7 @@ impl RenderCmd {
     }
 
     /// Execute the commands in the given plan
-    fn exec_plan(&self, plan: &Plan) -> Result<()> {
+    fn exec_plan(&self, plan: &Plan) -> anyhow::Result<()> {
         for (deployment, cmd) in &plan.commands {
             info!(" - {}", deployment);
 
@@ -218,7 +219,7 @@ impl RenderCmd {
     }
 
     /// Utility to turn an option for a vector of pathbufs into a vector of strings
-    fn get_values_as_strings(&self, input: &Option<Vec<PathBuf>>) -> Result<Vec<String>> {
+    fn get_values_as_strings(&self, input: &Option<Vec<PathBuf>>) -> anyhow::Result<Vec<String>> {
         let mut buffer: Vec<String> = vec![];
 
         if let Some(items) = input {

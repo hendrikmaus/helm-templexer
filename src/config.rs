@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{anyhow, bail};
+use log::warn;
 use serde::Deserialize;
 use std::path::Path;
 use std::path::PathBuf;
@@ -63,7 +64,7 @@ pub struct ValidationOpts {
 impl Config {
     /// Load given configuration file and deserialize it.
     /// Does not call Config::validate - only checks the path and runs Serde
-    pub fn load<S: AsRef<Path>>(file: S) -> Result<Config> {
+    pub fn load<S: AsRef<Path>>(file: S) -> anyhow::Result<Config> {
         Self::check_file_exists_and_readable(&file.as_ref())?;
 
         match serde_any::from_file(file) {
@@ -76,7 +77,7 @@ impl Config {
     }
 
     /// Validate the loaded configuration file
-    pub fn validate(&self, opts: &ValidationOpts) -> Result<()> {
+    pub fn validate(&self, opts: &ValidationOpts) -> anyhow::Result<()> {
         if let Some(enabled) = self.enabled {
             if !enabled && opts.skip_disabled {
                 warn!("Skipped validation of disabled file");
@@ -93,7 +94,7 @@ impl Config {
     }
 
     /// Check whether the given input file exists and is readable
-    fn check_file_exists_and_readable(input_file: &Path) -> Result<()> {
+    fn check_file_exists_and_readable(input_file: &Path) -> anyhow::Result<()> {
         if !input_file.exists() {
             bail!("File {:?} does not exist or is not readable", input_file);
         }
@@ -102,7 +103,7 @@ impl Config {
     }
 
     /// Assert that the designated Helm chart can be found on disk
-    fn check_chart_exists_and_readable(&self) -> Result<()> {
+    fn check_chart_exists_and_readable(&self) -> anyhow::Result<()> {
         if !self.chart.exists() {
             bail!("Chart {:?} does not exist or is not readable", self.chart);
         }
@@ -111,7 +112,7 @@ impl Config {
     }
 
     /// Find all references value files in the given config and check if they exist
-    fn check_value_files_exist_and_readable(&self) -> Result<()> {
+    fn check_value_files_exist_and_readable(&self) -> anyhow::Result<()> {
         match &self.values {
             Some(values) => Self::check_pathbuf_vec(&values)?,
             None => (),
@@ -128,7 +129,7 @@ impl Config {
     }
 
     /// Helper to iterate a vector of paths and check their existence
-    fn check_pathbuf_vec(files: &[PathBuf]) -> Result<()> {
+    fn check_pathbuf_vec(files: &[PathBuf]) -> anyhow::Result<()> {
         for f in files {
             if !f.exists() {
                 bail!("values file {:?} does not exist or is not readable", f)
@@ -139,7 +140,7 @@ impl Config {
     }
 
     /// Check the given schema version; should be extended once multiple are available
-    fn check_schema_version(&self) -> Result<()> {
+    fn check_schema_version(&self) -> anyhow::Result<()> {
         if self.version != "v1" {
             bail!("invalid schema version used; only 'v1' is supported")
         }
@@ -148,7 +149,7 @@ impl Config {
     }
 
     /// Go through all deployments and check if at least one of them is enabled
-    fn check_if_at_least_one_deployment_is_enabled(&self) -> Result<()> {
+    fn check_if_at_least_one_deployment_is_enabled(&self) -> anyhow::Result<()> {
         let mut all_disabled = true;
 
         for d in &self.deployments {

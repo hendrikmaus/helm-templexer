@@ -1,13 +1,5 @@
-#[macro_use]
-extern crate anyhow;
-#[macro_use]
-extern crate log;
-
+use anyhow::Context;
 use std::path::PathBuf;
-
-use anyhow::{Context, Result};
-use env_logger::Builder;
-use log::LevelFilter;
 use structopt::StructOpt;
 use structopt_flags::GetWithDefault;
 
@@ -67,11 +59,13 @@ pub struct RenderCmdOpts {
     additional_options: Option<Vec<String>>,
 }
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
 
-    let log_level = args.verbose.get_with_default(LevelFilter::Info);
-    Builder::from_default_env().filter_level(log_level).init();
+    let log_level = args.verbose.get_with_default(log::LevelFilter::Info);
+    env_logger::Builder::from_default_env()
+        .filter_level(log_level)
+        .init();
 
     match args.cmd {
         SubCmd::Validate(opts) => ValidateCmd::new(opts)
