@@ -259,6 +259,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -291,6 +292,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -331,6 +333,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
@@ -363,6 +366,7 @@ mod tests {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
+                additional_options: None,
             },
         };
 
