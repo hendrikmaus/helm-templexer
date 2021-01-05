@@ -1,5 +1,5 @@
 use anyhow::{anyhow, bail};
-use log::warn;
+use log::info;
 use serde::Deserialize;
 use std::path::Path;
 use std::path::PathBuf;
@@ -80,7 +80,7 @@ impl Config {
     pub fn validate(&self, opts: &ValidationOpts) -> anyhow::Result<()> {
         if let Some(enabled) = self.enabled {
             if !enabled && opts.skip_disabled {
-                warn!("Skipped validation of disabled file");
+                info!("Skipped validation of disabled file");
                 return Ok(());
             }
         }
