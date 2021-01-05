@@ -2,6 +2,8 @@
 
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
+> All **paths** in the workload config are relative to callers working directory.
+
 ```shell
 cat > my-app.toml <<EOF
 version = "v1"
@@ -31,6 +33,8 @@ manifests
 **Please mind:** we are in _alpha_ - all APIs can change at any time. Keep an eye on the release notes.
 
 Configuration can be provided as TOML, YAML or JSON - please also see the [examples](tests/data).
+
+Please mind that all paths are evaluated relative to the working directory you call `helm-templexer` from.
 
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
