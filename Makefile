@@ -20,13 +20,13 @@ uninstall: ## Uninstall helm-templexer
 
 ##@ Containerize
 
-docker-build:
+docker-build: ## Build Docker image
 	docker build \
 		--tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_TAG) \
 		$(CURDIR)
 .PHONY: docker-build
 
-docker-push:
+docker-push: ## Push Docker image
 	docker push \
 		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_TAG)
 .PHONY: docker-push
