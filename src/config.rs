@@ -119,14 +119,10 @@ impl Config {
         }
 
         for deployment in &self.deployments {
-            match deployment.enabled {
-                Some(enabled) => {
-                    if !enabled {
-                        continue;
-                    }
-                }
-                None => (),
+            if matches!(deployment.enabled, Some(enabled) if !enabled) {
+                continue;
             }
+
             match &deployment.values {
                 Some(values) => Self::check_pathbuf_vec(&values)?,
                 None => (),
