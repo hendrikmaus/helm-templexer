@@ -39,7 +39,7 @@ docker-push: ## Push Docker image
 ##@ Release
 
 release: ## Publish to crates.io, dockerhub
-	$(MAKE) -j \
+	$(MAKE) \
 		cargo-publish \
 		docker-publish \
 		github-publish
