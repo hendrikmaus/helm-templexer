@@ -36,6 +36,28 @@ docker-push: ## Push Docker image
 		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):latest
 .PHONY: docker-push
 
+##@ Release
+
+release: ## Publish to crates.io, dockerhub
+	$(MAKE) -j \
+		cargo-publish \
+		docker-publish \
+		github-publish
+.PHONY: release
+
+cargo-publish: ## Run cargo publish
+	cargo publish
+.PHONY: cargo-publish
+
+docker-publish: ## Run docker build and push
+	$(MAKE) docker-build docker-push
+.PHONY: docker-publish
+
+github-publish: ## Run gh release create for a github release
+	gh release create $(VERSION) \
+		--title $(VERSION)
+.PHONY: github-publish
+
 ##@ Misc
 
 clean: ## Clean local build data

@@ -71,9 +71,30 @@ helm-templexer render --additional-options="--set-string image.tag=${revision}" 
 
 ## Installation
 
-Helm Templexer is written in [Rust](http://www.rust-lang.org/). You will need `rustc` version 1.35.0 or higher. The recommended way to install Rust is from the official download page. Once you have it set up, a simple `make install` will compile `helm-templexer` and install it into `$HOME/.cargo/bin`.
+### Docker
+
+```shell
+docker pull hendrikmaus/helm-templexer
+docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data hendrikmaus/helm-templexer render config_example.toml 
+```
+
+Include `helm-templexer` in your `Dockerfile`:
+
+```Dockerfile
+FROM hendrikmaus/helm-templexer AS helm-templexer-provider
+COPY --from=helm-templexer-provider /usr/local/bin/helm-templexer /usr/local/bin
+```
+
+### Homebrew
+
+```shell
+brew tap hendrikmaus/tap
+brew install helm-templexer
+```
 
 ### Cargo Install
+
+Helm Templexer is written in [Rust](http://www.rust-lang.org/). You will need `rustc` version 1.35.0 or higher. The recommended way to install Rust is from the official download page. Once you have it set up, a simple `make install` will compile `helm-templexer` and install it into `$HOME/.cargo/bin`.
 
 If you’re using a recent version of Cargo (0.5.0 or higher), you can use the `cargo install` command:
 
