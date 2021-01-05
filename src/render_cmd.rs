@@ -1,7 +1,7 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
 use anyhow::bail;
-use log::{debug, info, warn};
+use log::{debug, info};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
@@ -50,7 +50,7 @@ impl RenderCmd {
             let plan = self.plan(&cfg)?;
 
             if plan.skip {
-                warn!("config is disabled (skipped)");
+                info!("config is disabled (skipped)");
                 continue;
             }
 
@@ -125,7 +125,7 @@ impl RenderCmd {
         for d in &cfg.deployments {
             if let Some(enabled) = d.enabled {
                 if !enabled {
-                    warn!(" - {} (skipped)", d.name);
+                    info!(" - {} (skipped)", d.name);
                     continue;
                 }
             }
