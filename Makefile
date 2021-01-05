@@ -21,7 +21,7 @@ uninstall: ## Uninstall helm-templexer
 ##@ Containerize
 
 docker-build: ## Build Docker image
-	docker build \
+	DOCKER_BUILDKIT=1 docker build \
 		--tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_TAG) \
 		$(CURDIR)
 .PHONY: docker-build

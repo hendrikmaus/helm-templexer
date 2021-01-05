@@ -1,6 +1,12 @@
 FROM rust:slim-buster as builder
+WORKDIR /usr/src/
+
+RUN USER=root cargo new helm-templexer
 WORKDIR /usr/src/helm-templexer
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+RUN cargo build --release
+
+COPY src ./src
 RUN cargo install --path .
 
 FROM debian:buster-slim
