@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-VERSION         ?= $(shell cat Cargo.toml | grep -Po 'version = "\K([0-9].[0-9].[0-9][\-a-z]+)')
+VERSION         ?= $(shell cat Cargo.toml | grep -Po 'version = "\K([0-9].[0-9].[0-9])')
 DOCKER_REGISTRY ?= hendrikmaus
 DOCKER_IMAGE    ?= helm-templexer
 DOCKER_TAG      ?= $(VERSION)
@@ -29,6 +29,11 @@ docker-build: ## Build Docker image
 docker-push: ## Push Docker image
 	docker push \
 		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker tag \
+		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_TAG) \
+		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):latest
+	docker push \
+		$(DOCKER_REGISTRY)/$(DOCKER_IMAGE):latest
 .PHONY: docker-push
 
 ##@ Misc
