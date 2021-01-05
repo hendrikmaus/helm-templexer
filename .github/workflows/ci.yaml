@@ -1,6 +1,13 @@
 ---
 # based on: https://github.com/actions-rs/meta/blob/d7602e71e8b4e6054edbeda7732ed0da8fbb8989/recipes/quickstart.md
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+env:
+  CARGO_TERM_COLOR: always
 
 name: Continuous integration
 
