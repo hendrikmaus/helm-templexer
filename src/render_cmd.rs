@@ -57,8 +57,6 @@ impl RenderCmd {
             self.exec_plan(&plan)?;
         }
 
-        info!("done");
-
         Ok(())
     }
 
