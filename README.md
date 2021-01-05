@@ -2,7 +2,7 @@
 
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
-```shell script
+```shell
 cat > my-app.toml <<EOF
 version = "v1"
 chart = "tests/data/nginx-chart"
@@ -61,7 +61,7 @@ Use `--additional-options` to pass data to the underlying `helm template` call. 
 
 A common use case we found was to provide the container tag:
 
-```shell script
+```shell
 helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
 ```
 
@@ -73,7 +73,7 @@ Helm Templexer is written in [Rust](http://www.rust-lang.org/). You will need `r
 
 If you’re using a recent version of Cargo (0.5.0 or higher), you can use the `cargo install` command:
 
-```shell script
+```shell
 cargo install helm-templexer
 ```
 
