@@ -97,11 +97,12 @@ impl RenderCmd {
             .map(|f| format!("--values={}", f))
             .collect();
 
-        let mut base_cmd = vec![];
-        base_cmd.push("helm".to_string());
-        base_cmd.push("template".to_string());
-        base_cmd.push(cfg.release_name.clone());
-        base_cmd.push(chart.to_string());
+        let mut base_cmd = vec![
+            "helm".to_string(),
+            "template".to_string(),
+            cfg.release_name.clone(),
+            chart.to_string(),
+        ];
 
         match &cfg.namespace {
             Some(namespace) => base_cmd.push(format!("--namespace={}", namespace)),
