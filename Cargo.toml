@@ -1,6 +1,6 @@
 [package]
 name = "helm-templexer"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Hendrik Maus <aidentailor@gmail.com>"]
 edition = "2018"
 
@@ -16,17 +16,17 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-structopt = "0.3"
-structopt-flags = "0.3"
-log = "0.4"
-env_logger = "0.8"
-anyhow = "1.0"
-thiserror = "1.0"
-serde_any = "0.5"
-serde = "1.0"
-subprocess = "0.2"
+structopt = "0"
+structopt-flags = "0"
+log = "0"
+env_logger = "0"
+anyhow = "1"
+thiserror = "1"
+serde_any = "0"
+serde = "1"
+subprocess = "0"
 
 [dev-dependencies]
-assert_cmd = "1.0"
-predicates = "1.0"
-pretty_assertions = "0.6"
+assert_cmd = "1"
+predicates = "1"
+pretty_assertions = "0"
