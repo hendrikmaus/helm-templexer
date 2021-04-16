@@ -30,9 +30,7 @@ manifests
 
 ## Configuration
 
-**Please mind:** we are in _alpha_ - all APIs can change at any time. Keep an eye on the release notes.
-
-Configuration can be provided as TOML, YAML or JSON - please also see the [examples](tests/data).
+Configuration can be provided as TOML, YAML or JSON - please also **see the [examples](tests/data)**.
 
 Please mind that all paths are evaluated relative to the working directory you call `helm-templexer` from.
 
