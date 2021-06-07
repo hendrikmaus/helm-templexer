@@ -83,6 +83,7 @@ impl RenderCmd {
             ),
         };
 
+        // todo if --stdout is given, this can be skipped
         let output_dir = match cfg.output_path.to_str() {
             Some(s) => s,
             None => bail!(
@@ -151,12 +152,16 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
-            cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
+            if !self.opts.stdout {
+                let fully_qualified_output_dir =
+                    format!("{}/{}/{}", output_dir, d.name, release_name);
+                cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
+
+                plan.output_paths
+                    .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
+            }
 
             plan.commands.insert(d.name.to_owned(), cmd);
-            plan.output_paths
-                .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
         }
 
         Ok(plan)
@@ -173,6 +178,7 @@ impl RenderCmd {
                 cmd.join(" ")
             );
 
+            // todo if --stdout is given, this can be skipped
             match &plan.output_paths.get(deployment) {
                 Some(p) => {
                     debug!("cleaning up output path: {:?}", p);
@@ -216,6 +222,11 @@ impl RenderCmd {
                     cmd.join(" "),
                     result.stdout_str()
                 );
+            }
+
+            // todo we need to ensure that helm prefixes every stream with `---`
+            if self.opts.stdout {
+                print!("{}", result.stdout_str());
             }
         }
 
@@ -264,6 +275,7 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
+                stdout: false,
             },
         };
 
@@ -297,6 +309,7 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
+                stdout: false,
             },
         };
 
@@ -338,6 +351,7 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
+                stdout: false,
             },
         };
 
@@ -371,6 +385,7 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
+                stdout: false,
             },
         };
 
@@ -413,6 +428,7 @@ mod tests {
                 additional_options: Option::from(
                     vec!["--set-string=image.tag=424242a".to_string()],
                 ),
+                stdout: false,
             },
         };
 

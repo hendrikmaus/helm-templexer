@@ -1,0 +1,243 @@
+---
+# Source: nginx-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: nginx-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+---
+# Source: nginx-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-chart
+      app.kubernetes.io/instance: my-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx-chart
+        app.kubernetes.io/instance: my-app
+    spec:
+      serviceAccountName: my-app-nginx-chart
+      securityContext:
+        {}
+      containers:
+        - name: nginx-chart
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+---
+# Source: nginx-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-prod-eu-w4-nginx-prod-eu-w4
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-prod-eu-w4
+    app.kubernetes.io/instance: my-app-prod-eu-w4
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: nginx-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-prod-eu-w4-nginx-prod-eu-w4
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-prod-eu-w4
+    app.kubernetes.io/instance: my-app-prod-eu-w4
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: nginx-prod-eu-w4
+    app.kubernetes.io/instance: my-app-prod-eu-w4
+---
+# Source: nginx-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-prod-eu-w4-nginx-prod-eu-w4
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-prod-eu-w4
+    app.kubernetes.io/instance: my-app-prod-eu-w4
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-prod-eu-w4
+      app.kubernetes.io/instance: my-app-prod-eu-w4
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx-prod-eu-w4
+        app.kubernetes.io/instance: my-app-prod-eu-w4
+    spec:
+      serviceAccountName: my-app-prod-eu-w4-nginx-prod-eu-w4
+      securityContext:
+        {}
+      containers:
+        - name: nginx-chart
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+---
+# Source: nginx-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: nginx-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+---
+# Source: nginx-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-chart
+      app.kubernetes.io/instance: my-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx-chart
+        app.kubernetes.io/instance: my-app
+    spec:
+      serviceAccountName: my-app-nginx-chart
+      securityContext:
+        {}
+      containers:
+        - name: nginx-chart
+          securityContext:
+            {}
+          image: "nginx:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}

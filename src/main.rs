@@ -57,6 +57,12 @@ pub struct RenderCmdOpts {
     /// Pass additional options to the underlying 'helm template' call, e.g. '--set-string image.tag=${revision}'
     #[structopt(short, long, multiple = true)]
     additional_options: Option<Vec<String>>,
+
+    /// Print rendered manifests to stdout
+    /// todo when this is set to true, the logger MUST NOT print anything else to stdout
+    ///      the default behavior of the logger seems to be to write to stderr anyway
+    #[structopt(short, long)]
+    stdout: bool,
 }
 
 fn main() -> anyhow::Result<()> {
