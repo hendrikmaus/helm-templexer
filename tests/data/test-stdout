@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec > >(trap "" INT TERM; sed 's/^/stdout: /')
+exec 2> >(trap "" INT TERM; sed 's/^/stderr: /' >&2)
+
+cargo run --manifest-path ../../Cargo.toml -- render --stdout config_example.yaml

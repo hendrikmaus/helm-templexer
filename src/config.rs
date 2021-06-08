@@ -25,6 +25,8 @@ pub struct Config {
     pub release_name: String,
 
     /// Output path to write manifests to; passed via `--output-dir`
+    /// ignored if `--stdout` is passed to the `helm-templexer render`
+    /// todo turn it into an `Option` and revert to stdout printing if it is omitted
     pub output_path: PathBuf,
 
     /// Use any other option that `helm template` supports
