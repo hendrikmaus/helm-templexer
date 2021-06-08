@@ -83,7 +83,6 @@ impl RenderCmd {
             ),
         };
 
-        // todo if --stdout is given, this can be skipped
         let output_dir = match cfg.output_path.to_str() {
             Some(s) => s,
             None => bail!(
@@ -178,16 +177,17 @@ impl RenderCmd {
                 cmd.join(" ")
             );
 
-            // todo if --stdout is given, this can be skipped
-            match &plan.output_paths.get(deployment) {
-                Some(p) => {
-                    debug!("cleaning up output path: {:?}", p);
-                    if p.exists() {
-                        std::fs::remove_dir_all(p)?;
+            if !self.opts.stdout {
+                match &plan.output_paths.get(deployment) {
+                    Some(p) => {
+                        debug!("cleaning up output path: {:?}", p);
+                        if p.exists() {
+                            std::fs::remove_dir_all(p)?;
+                        }
+                        std::fs::create_dir_all(p)?;
                     }
-                    std::fs::create_dir_all(p)?;
+                    None => (),
                 }
-                None => (),
             }
 
             // `helm` logs that it wanted to exit 1 but actually exits 0:
@@ -224,7 +224,8 @@ impl RenderCmd {
                 );
             }
 
-            // todo we need to ensure that helm prefixes every stream with `---`
+            // Helm seems to automatically insert Yaml's document separators (`---`)
+            // so we do not check for them again
             if self.opts.stdout {
                 print!("{}", result.stdout_str());
             }

@@ -59,8 +59,6 @@ pub struct RenderCmdOpts {
     additional_options: Option<Vec<String>>,
 
     /// Print rendered manifests to stdout
-    /// todo when this is set to true, the logger MUST NOT print anything else to stdout
-    ///      the default behavior of the logger seems to be to write to stderr anyway
     #[structopt(short, long)]
     stdout: bool,
 }
