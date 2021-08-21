@@ -67,7 +67,7 @@ impl Config {
     /// Load given configuration file and deserialize it.
     /// Does not call Config::validate - only checks the path and runs Serde
     pub fn load<S: AsRef<Path>>(file: S) -> anyhow::Result<Config> {
-        Self::check_file_exists_and_readable(&file.as_ref())?;
+        Self::check_file_exists_and_readable(file.as_ref())?;
 
         match serde_any::from_file(file) {
             Ok(cfg) => Ok(cfg),
@@ -116,7 +116,7 @@ impl Config {
     /// Find all referenced value files in the given config and check if they exist
     fn check_value_files_exist_and_readable(&self) -> anyhow::Result<()> {
         match &self.values {
-            Some(values) => Self::check_pathbuf_vec(&values)?,
+            Some(values) => Self::check_pathbuf_vec(values)?,
             None => (),
         }
 
@@ -126,7 +126,7 @@ impl Config {
             }
 
             match &deployment.values {
-                Some(values) => Self::check_pathbuf_vec(&values)?,
+                Some(values) => Self::check_pathbuf_vec(values)?,
                 None => (),
             }
         }
