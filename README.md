@@ -82,15 +82,23 @@ Also mind that any other logs, e.g. info logs etc, are written to `stderr` by de
 ### Docker
 
 ```shell
-docker pull hendrikmaus/helm-templexer
-docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data hendrikmaus/helm-templexer render config_example.toml 
+# create the directory where helm-templexer will render to
+mkdir -p tests/data/manifests
+
+# let helm-templexers user id (1001) own the directory
+sudo chown -R 1001 tests/data/manifests
+
+# pull and run the image
+docker pull ghcr.io/hendrikmaus/helm-templexer
+docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data ghcr.io/hendrikmaus/helm-templexer render config_example.toml 
 ```
 
 Include `helm-templexer` in your `Dockerfile`:
 
 ```Dockerfile
-FROM hendrikmaus/helm-templexer AS helm-templexer-provider
-COPY --from=helm-templexer-provider /usr/local/bin/helm-templexer /usr/local/bin
+FROM ghcr.io/hendrikmaus/helm-templexer AS helm-templexer-provider
+COPY --from=helm-templexer-provider /usr/bin/helm-templexer /usr/bin
+COPY --from=helm-templexer-provider /usr/bin/helm /usr/bin
 ```
 
 ### Homebrew

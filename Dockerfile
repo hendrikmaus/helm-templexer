@@ -1,24 +1,5 @@
-FROM lukemathwalker/cargo-chef as planner
-WORKDIR app
-COPY . .
-RUN cargo chef prepare  --recipe-path recipe.json
-
-FROM lukemathwalker/cargo-chef as cacher
-WORKDIR app
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-
-FROM rust as builder
-WORKDIR app
-COPY . .
-# Copy over the cached dependencies
-COPY --from=cacher /app/target target
-COPY --from=cacher $CARGO_HOME $CARGO_HOME
-RUN cargo build --release --bin helm-templexer
-
-FROM debian:buster-slim
-COPY --from=builder /app/target/release/helm-templexer /usr/local/bin
-
+FROM debian:buster-slim as builder
+SHELL ["/bin/bash", "-ceuxo", "pipefail"]
 RUN apt-get update && apt-get install -y curl
 
 ARG HELM_VERSION=3.5.4
@@ -30,5 +11,11 @@ RUN curl --location --retry 3 --show-error --silent -O "https://get.helm.sh/helm
  && mv "linux-amd64/helm" /usr/bin/ \
  && chmod +x /usr/bin/helm
 
+FROM debian:buster-slim as runtime
+LABEL maintainer="Hendrik Maus <aidentailor@gmail.com>"
+LABEL description="Render Helm charts for multiple environments using explicit configuration."
+COPY --from=builder /usr/bin/helm /usr/bin/
+COPY target/x86_64-unknown-linux-musl/release/helm-templexer /usr/bin/
+USER 1001
 CMD ["--help"]
-ENTRYPOINT ["helm-templexer"]
+ENTRYPOINT ["/usr/bin/helm-templexer"]
