@@ -256,12 +256,13 @@ mod tests {
     use crate::config::Deployment;
     use pretty_assertions::assert_eq;
 
-    #[test]
-    fn disabled_files_are_skipped() {
-        let cfg = Config {
+    /// Help function to abstract the construction of `Config` for test cases
+    /// This is useful once `Config` changes as only this function needs to be changed, not every test case
+    fn get_config() -> Config {
+        Config {
             version: "v1".to_string(),
             helm_version: None,
-            enabled: Option::from(false),
+            enabled: Option::from(true),
             chart: Default::default(),
             namespace: None,
             release_name: "".to_string(),
@@ -269,16 +270,40 @@ mod tests {
             additional_options: None,
             values: None,
             deployments: vec![],
-        };
+        }
+    }
 
-        let cmd = RenderCmd {
+    /// Help function to abstract the construction of `RenderCmd` for test cases
+    /// This is useful once `RenderCmd` changes as only this function needs to be changed, not every test case
+    fn get_cmd() -> RenderCmd {
+        RenderCmd {
             opts: RenderCmdOpts {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
                 stdout: false,
+                update_dependencies: false,
             },
-        };
+        }
+    }
+
+    /// Help function to abstract the construction of `Deployment` for test cases
+    /// This is useful once `Deployment` changes as only this function needs to be changed, not every test case
+    fn get_deployment() -> Deployment {
+        Deployment {
+            name: "".to_string(),
+            enabled: Option::from(true),
+            release_name: None,
+            additional_options: None,
+            values: None,
+        }
+    }
+
+    #[test]
+    fn disabled_files_are_skipped() {
+        let mut cfg = get_config();
+        cfg.enabled = Option::from(false);
+        let cmd = get_cmd();
 
         let res = cmd.plan(&cfg).unwrap();
         assert_eq!(true, res.skip);
@@ -286,34 +311,22 @@ mod tests {
 
     #[test]
     fn simple_deployment_command() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("charts/some-chart"),
-            namespace: Option::from("default".to_string()),
-            release_name: "some-release".to_string(),
-            output_path: PathBuf::from("manifests"),
-            additional_options: Option::from(vec!["--no-hooks".to_string(), "--debug".to_string()]),
-            values: Option::from(vec![PathBuf::from("some-base.yaml")]),
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: Option::from(vec!["--set=env=edge".to_string()]),
-                values: Option::from(vec![PathBuf::from("edge.yaml")]),
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+        cfg.additional_options =
+            Option::from(vec!["--no-hooks".to_string(), "--debug".to_string()]);
+        cfg.values = Option::from(vec![PathBuf::from("some-base.yaml")]);
 
-        let cmd = RenderCmd {
-            opts: RenderCmdOpts {
-                input_files: vec![],
-                helm_bin: None,
-                additional_options: None,
-                stdout: false,
-            },
-        };
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        deployment.additional_options = Option::from(vec!["--set=env=edge".to_string()]);
+        deployment.values = Option::from(vec![PathBuf::from("edge.yaml")]);
+        cfg.deployments = vec![deployment];
 
+        let cmd = get_cmd();
         let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
             --values=some-base.yaml --no-hooks --debug --values=edge.yaml --set=env=edge \
@@ -328,68 +341,34 @@ mod tests {
 
     #[test]
     fn disabled_deployments_are_not_planned() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("charts/some-chart"),
-            namespace: None,
-            release_name: "some-release".to_string(),
-            output_path: PathBuf::from("manifests"),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(false),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
 
-        let cmd = RenderCmd {
-            opts: RenderCmdOpts {
-                input_files: vec![],
-                helm_bin: None,
-                additional_options: None,
-                stdout: false,
-            },
-        };
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        deployment.enabled = Option::from(false);
+        cfg.deployments = vec![deployment];
 
+        let cmd = get_cmd();
         let res = cmd.plan(&cfg).unwrap();
         assert_eq!(None, res.commands.get("edge"));
     }
 
     #[test]
     fn deployment_can_override_release_name() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("charts/some-chart"),
-            namespace: None,
-            release_name: "some-release".to_string(),
-            output_path: PathBuf::from("manifests"),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: Option::from("edge-release".to_string()),
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
 
-        let cmd = RenderCmd {
-            opts: RenderCmdOpts {
-                input_files: vec![],
-                helm_bin: None,
-                additional_options: None,
-                stdout: false,
-            },
-        };
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        deployment.release_name = Option::from("edge-release".to_string());
+        cfg.deployments = vec![deployment];
 
+        let cmd = get_cmd();
         let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template edge-release charts/some-chart \
             --output-dir=manifests/edge/edge-release";
@@ -403,35 +382,22 @@ mod tests {
 
     #[test]
     fn render_can_accept_additional_options_via_cli_option() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("charts/some-chart"),
-            namespace: Option::from("default".to_string()),
-            release_name: "some-release".to_string(),
-            output_path: PathBuf::from("manifests"),
-            additional_options: Option::from(vec!["--no-hooks".to_string(), "--debug".to_string()]),
-            values: Option::from(vec![PathBuf::from("some-base.yaml")]),
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+        cfg.additional_options =
+            Option::from(vec!["--no-hooks".to_string(), "--debug".to_string()]);
+        cfg.values = Option::from(vec![PathBuf::from("some-base.yaml")]);
 
-        let cmd = RenderCmd {
-            opts: RenderCmdOpts {
-                input_files: vec![],
-                helm_bin: None,
-                additional_options: Option::from(
-                    vec!["--set-string=image.tag=424242a".to_string()],
-                ),
-                stdout: false,
-            },
-        };
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
+
+        let mut cmd = get_cmd();
+        cmd.opts.additional_options =
+            Option::from(vec!["--set-string=image.tag=424242a".to_string()]);
 
         let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
