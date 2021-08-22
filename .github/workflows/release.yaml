@@ -4,9 +4,9 @@ on:
       - published
 
 jobs:
-  release:
+  release-binaries:
     name: release ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -20,3 +20,17 @@ jobs:
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: ./
           EXTRA_FILES: "README.md"
+  publish-cratesio:
+    name: Publish to crates.io
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: katyo/publish-crates@v1
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
