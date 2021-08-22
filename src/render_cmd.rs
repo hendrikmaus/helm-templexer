@@ -91,6 +91,15 @@ impl RenderCmd {
             ),
         };
 
+        if self.opts.update_dependencies {
+            let cmd = vec![
+                "helm".to_string(),
+                "dependencies".to_string(),
+                "update".to_string(),
+            ];
+            plan.commands.insert("update_dependencies".to_string(), cmd);
+        }
+
         let values: Vec<String> = self
             .get_values_as_strings(&cfg.values)?
             .iter()
@@ -409,5 +418,31 @@ mod tests {
             .collect();
 
         assert_eq!(&expected_helm_cmd, res.commands.get("edge").unwrap());
+    }
+
+    #[test]
+    fn render_can_update_dependencies() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
+
+        let mut cmd = get_cmd();
+        cmd.opts.update_dependencies = true;
+
+        let res = cmd.plan(&cfg).unwrap();
+        let expected_helm_cmd = "helm dependencies update";
+        let expected_helm_cmd: Vec<String> = expected_helm_cmd
+            .split_whitespace()
+            .map(String::from)
+            .collect();
+
+        assert_eq!(
+            &expected_helm_cmd,
+            res.commands.get("update_dependencies").unwrap()
+        );
     }
 }
