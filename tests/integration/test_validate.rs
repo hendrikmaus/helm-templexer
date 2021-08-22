@@ -6,7 +6,7 @@ use std::process::Command;
 fn file_is_valid() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
-    cmd.current_dir("tests/data")
+    cmd.current_dir("data")
         .arg("validate")
         .arg("config_example.toml");
 
@@ -31,7 +31,7 @@ fn file_does_not_exist() -> anyhow::Result<()> {
 fn chart_does_not_exist() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
-    cmd.current_dir("tests/data")
+    cmd.current_dir("data")
         .arg("validate")
         .arg("config_chart_does_not_exist.toml");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -45,7 +45,7 @@ fn chart_does_not_exist() -> anyhow::Result<()> {
 fn validate_accepts_multiple_files() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("helm-templexer")?;
 
-    cmd.current_dir("tests/data")
+    cmd.current_dir("data")
         .arg("validate")
         .arg("config_example.toml")
         .arg("config_example.yaml")

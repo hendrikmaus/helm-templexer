@@ -11,7 +11,7 @@ const BIN_NAME: &'static str = "helm-templexer";
 fn render_config_example() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    cmd.current_dir("tests/data")
+    cmd.current_dir("data")
         .arg("render")
         .arg("config_example.toml");
 
@@ -68,7 +68,7 @@ fn render_config_example() -> anyhow::Result<()> {
 fn render_config_example_to_stdout() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    cmd.current_dir("tests/data")
+    cmd.current_dir("data")
         .arg("render")
         .arg("--stdout")
         .arg("config_example.toml");

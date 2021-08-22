@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn input_file_exists() {
         // TODO feels more like an integration test, rather than a unit test
-        Config::load("tests/data/config_example.toml").unwrap();
+        Config::load("tests/integration/data/config_example.toml").unwrap();
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
             version: "v1".to_string(),
             helm_version: None,
             enabled: Option::from(true),
-            chart: PathBuf::from("tests/data/nginx-chart"),
+            chart: PathBuf::from("tests/integration/data/nginx-chart"),
             namespace: None,
             release_name: "".to_string(),
             output_path: Default::default(),
