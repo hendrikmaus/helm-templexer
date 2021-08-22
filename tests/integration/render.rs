@@ -5,13 +5,13 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-const BIN_NAME: &'static str = "helm-templexer";
+const BIN_NAME: &'static str = env!("CARGO_PKG_NAME");
 
 #[test]
 fn render_config_example() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    cmd.current_dir("data")
+    cmd.current_dir("tests/data")
         .arg("render")
         .arg("config_example.toml");
 
@@ -68,7 +68,7 @@ fn render_config_example() -> anyhow::Result<()> {
 fn render_config_example_to_stdout() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    cmd.current_dir("data")
+    cmd.current_dir("tests/data")
         .arg("render")
         .arg("--stdout")
         .arg("config_example.toml");
