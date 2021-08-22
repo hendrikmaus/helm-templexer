@@ -1,13 +1,14 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
 use anyhow::bail;
+use indexmap::map::IndexMap;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
 
 /// Special name used in the commands map of a plan when a helm dependency update is requested
-const CMD_DEPENDENCY_UPDATE: &str = "helm-update-dependencies";
+const PRE_CMD_DEPENDENCY_UPDATE: &str = "helm-dependency-update";
 
 pub struct RenderCmd {
     opts: RenderCmdOpts,
@@ -19,6 +20,10 @@ pub struct RenderCmd {
 struct Plan {
     /// Skip this plan; set to true if the config is disabled on the top level
     skip: bool,
+
+    /// Commands to be executed in order of appearance before running `self.commands`.
+    /// This field uses a IndexMap to guarantee order of iteration.
+    pre_commands: IndexMap<String, Vec<String>>,
 
     /// Commands to be executed on the host system
     /// key: deployment.name
@@ -45,7 +50,7 @@ impl RenderCmd {
         debug!("render options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
-            info!("rendering deployments for {:?}", file);
+            info!("processing {:?}", file);
 
             let cfg = Config::load(&file)?;
             cfg.validate(&ValidationOpts::default())?;
@@ -67,6 +72,7 @@ impl RenderCmd {
     fn plan(&self, cfg: &Config) -> anyhow::Result<Plan> {
         let mut plan = Plan {
             skip: false,
+            pre_commands: Default::default(),
             commands: Default::default(),
             output_paths: Default::default(),
         };
@@ -99,8 +105,10 @@ impl RenderCmd {
                 "helm".to_string(),
                 "dependencies".to_string(),
                 "update".to_string(),
+                chart.to_string(),
             ];
-            plan.commands.insert(CMD_DEPENDENCY_UPDATE.to_string(), cmd);
+            plan.pre_commands
+                .insert(PRE_CMD_DEPENDENCY_UPDATE.to_string(), cmd);
         }
 
         let values: Vec<String> = self
@@ -136,7 +144,7 @@ impl RenderCmd {
         for d in &cfg.deployments {
             if let Some(enabled) = d.enabled {
                 if !enabled {
-                    info!(" - {} (skipped)", d.name);
+                    info!(" - (skip) {}", d.name);
                     continue;
                 }
             }
@@ -180,67 +188,98 @@ impl RenderCmd {
 
     /// Execute the commands in the given plan
     fn exec_plan(&self, plan: &Plan) -> anyhow::Result<()> {
-        for (deployment, cmd) in &plan.commands {
-            info!(" - {}", deployment);
+        if !&plan.pre_commands.is_empty() {
+            info!("pre-commands:");
 
-            debug!(
-                "executing planned command for deployment {}:\n \t {:#?}",
-                deployment,
-                cmd.join(" ")
-            );
+            for (command_id, cmd) in &plan.pre_commands {
+                info!(" - {}", command_id);
 
-            if !self.opts.stdout {
-                match &plan.output_paths.get(deployment) {
-                    Some(p) => {
-                        debug!("cleaning up output path: {:?}", p);
-                        if p.exists() {
-                            std::fs::remove_dir_all(p)?;
-                        }
-                        std::fs::create_dir_all(p)?;
-                    }
-                    None => (),
-                }
-            }
-
-            // `helm` logs that it wanted to exit 1 but actually exits 0:
-            //
-            //   ❯ helm version --client
-            //   version.BuildInfo{Version:"v3.2.4", GitCommit:"0ad800ef43d3b826f31a5ad8dfbb4fe05d143688", GitTreeState:"clean", GoVersion:"go1.13.12"}
-            //
-            //   ❯ helm faulty-command
-            //   Error: unknown command "faulty-command" for "helm"
-            //   Run 'helm --help' for usage.
-            //       exit status 1
-            //
-            //   ❯ echo $?
-            //   0
-            //
-            // So we'll examine stdout/stderr to detect if helm failed but did not exit
-            // with a code other than 0.
-            //
-            // The issue is reported and open https://github.com/helm/helm/issues/8268
-            //   as of 2020-07-26
-
-            let result = Exec::shell(cmd.join(" "))
-                .stdout(Redirection::Pipe)
-                .stderr(Redirection::Merge)
-                .capture()?;
-
-            debug!("helm output:\n{}", result.stdout_str());
-
-            if !result.exit_status.success() || result.stdout_str().contains("exit status 1") {
-                bail!(
-                    "failed while running `helm`:\n\n\t{}\n\n{}",
-                    cmd.join(" "),
-                    result.stdout_str()
+                debug!(
+                    "executing pre-command {}:\n \t {:#?}",
+                    command_id,
+                    cmd.join(" ")
                 );
-            }
 
-            // Helm seems to automatically insert Yaml's document separators (`---`)
-            // so we do not check for them again
-            if self.opts.stdout {
-                print!("{}", result.stdout_str());
+                self.run_helm(&cmd.join(" "))?;
             }
+        }
+
+        if !&plan.commands.is_empty() {
+            info!("deployments:");
+
+            for (deployment, cmd) in &plan.commands {
+                info!(" - {}", deployment);
+
+                debug!(
+                    "executing planned command for deployment {}:\n \t {:#?}",
+                    deployment,
+                    cmd.join(" ")
+                );
+
+                if !self.opts.stdout {
+                    match &plan.output_paths.get(deployment) {
+                        Some(p) => {
+                            debug!("cleaning up output path: {:?}", p);
+                            if p.exists() {
+                                std::fs::remove_dir_all(p)?;
+                            }
+                            std::fs::create_dir_all(p)?;
+                        }
+                        None => (),
+                    }
+                }
+
+                self.run_helm(&cmd.join(" "))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Run `helm` commands
+    ///
+    /// With special result handling as `helm` could exit 0 while logging `exit status 1`.
+    /// It is unclear if the issue is actually resolved, see
+    /// https://github.com/helm/helm/issues/8268
+    fn run_helm(&self, cmd: &str) -> anyhow::Result<()> {
+        // `helm` logs that it wanted to exit 1 but actually exits 0:
+        //
+        //   ❯ helm version --client
+        //   version.BuildInfo{Version:"v3.2.4", GitCommit:"0ad800ef43d3b826f31a5ad8dfbb4fe05d143688", GitTreeState:"clean", GoVersion:"go1.13.12"}
+        //
+        //   ❯ helm faulty-command
+        //   Error: unknown command "faulty-command" for "helm"
+        //   Run 'helm --help' for usage.
+        //       exit status 1
+        //
+        //   ❯ echo $?
+        //   0
+        //
+        // So we'll examine stdout/stderr to detect if helm failed but did not exit
+        // with a code other than 0.
+        //
+        // The issue is reported and open https://github.com/helm/helm/issues/8268
+        //   as of 2020-07-26
+
+        let result = Exec::shell(cmd)
+            .stdout(Redirection::Pipe)
+            .stderr(Redirection::Merge)
+            .capture()?;
+
+        debug!("helm output:\n{}", result.stdout_str());
+
+        if !result.exit_status.success() || result.stdout_str().contains("exit status 1") {
+            bail!(
+                "failed while running `helm`:\n\n\t{}\n\n{}",
+                cmd,
+                result.stdout_str()
+            );
+        }
+
+        // Helm seems to automatically insert Yaml's document separators (`---`)
+        // so we do not check for them again
+        if self.opts.stdout {
+            print!("{}", result.stdout_str());
         }
 
         Ok(())
@@ -437,7 +476,7 @@ mod tests {
         cmd.opts.update_dependencies = true;
 
         let res = cmd.plan(&cfg).unwrap();
-        let expected_helm_cmd = "helm dependencies update";
+        let expected_helm_cmd = "helm dependencies update charts/some-chart";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
@@ -445,7 +484,7 @@ mod tests {
 
         assert_eq!(
             &expected_helm_cmd,
-            res.commands.get(CMD_DEPENDENCY_UPDATE).unwrap()
+            res.pre_commands.get(PRE_CMD_DEPENDENCY_UPDATE).unwrap()
         );
     }
 }
