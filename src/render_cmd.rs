@@ -6,6 +6,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
 
+/// Special name used in the commands map of a plan when a helm dependency update is requested
+const CMD_DEPENDENCY_UPDATE: &str = "helm-update-dependencies";
+
 pub struct RenderCmd {
     opts: RenderCmdOpts,
 }
@@ -97,7 +100,7 @@ impl RenderCmd {
                 "dependencies".to_string(),
                 "update".to_string(),
             ];
-            plan.commands.insert("update_dependencies".to_string(), cmd);
+            plan.commands.insert(CMD_DEPENDENCY_UPDATE.to_string(), cmd);
         }
 
         let values: Vec<String> = self
@@ -442,7 +445,7 @@ mod tests {
 
         assert_eq!(
             &expected_helm_cmd,
-            res.commands.get("update_dependencies").unwrap()
+            res.commands.get(CMD_DEPENDENCY_UPDATE).unwrap()
         );
     }
 }
