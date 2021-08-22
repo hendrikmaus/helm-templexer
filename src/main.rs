@@ -61,6 +61,10 @@ pub struct RenderCmdOpts {
     /// Print rendered manifests to stdout
     #[structopt(short, long)]
     stdout: bool,
+
+    /// Run `helm dependencies update` before rendering deployments
+    #[structopt(short, long)]
+    update_dependencies: bool,
 }
 
 fn main() -> anyhow::Result<()> {
