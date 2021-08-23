@@ -270,12 +270,6 @@ impl RenderCmd {
             );
         }
 
-        // Helm seems to automatically insert Yaml's document separators (`---`)
-        // so we do not check for them again
-        if self.opts.stdout {
-            print!("{}", result.stdout_str());
-        }
-
         Ok(())
     }
 
@@ -326,7 +320,6 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
-                stdout: false,
                 update_dependencies: false,
             },
         }
