@@ -89,10 +89,12 @@ impl Config {
         if let Some(config_file) = &opts.config_file {
             // change the working directory to the place where the config file is, so that all
             // paths are relative to the config file instead of the location where the templexer is called from
-            let base_path = config_file.parent().ok_or(anyhow!(
-                "could not determine base path of given configuration file {:?}",
-                config_file
-            ))?;
+            let base_path = config_file.parent().ok_or_else(|| {
+                anyhow!(
+                    "could not determine base path of given configuration file {:?}",
+                    config_file
+                )
+            })?;
 
             if !base_path.to_string_lossy().is_empty() {
                 log::trace!("changing base path for execution to {:?}", base_path);
