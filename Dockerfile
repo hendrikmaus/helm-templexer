@@ -12,8 +12,12 @@ RUN curl --location --retry 3 --show-error --silent -O "https://get.helm.sh/helm
  && chmod +x /usr/bin/helm
 
 FROM debian:buster-slim as runtime
-LABEL maintainer="Hendrik Maus <aidentailor@gmail.com>"
-LABEL description="Render Helm charts for multiple environments using explicit configuration."
+# labels according to opencontainers https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.authors="Hendrik Maus <aidentailor@gmail.com>"
+LABEL org.opencontainers.image.url="https://github.com/hendrikmaus/helm-templexer"
+LABEL org.opencontainers.image.documentation="https://github.com/hendrikmaus/helm-templexer"
+LABEL org.opencontainers.image.source="https://github.com/hendrikmaus/helm-templexer/blob/master/Dockerfile"
+LABEL org.opencontainers.image.description="Render Helm charts for multiple environments using explicit configuration."
 COPY --from=builder /usr/bin/helm /usr/bin/
 COPY target/x86_64-unknown-linux-musl/release/helm-templexer /usr/bin/
 USER 1001
