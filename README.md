@@ -34,20 +34,18 @@ Configuration can be provided as TOML, YAML or JSON - please also **see the [exa
 
 Please mind that all paths are evaluated relative to the working directory you call `helm-templexer` from.
 
-<!-- created and edited using https://www.tablesgenerator.com/markdown_tables -->
-
-| **Parameter**        | **Description**                                                                                                                                                                                                                                                                                                                                          | **Condition** | **Default** | **Example**                          |
-|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|-------------|--------------------------------------|
-| `version`            | Schema version to use                                                                                                                                                                                                                                                                                                                                    | **required**  |             | `"v1"`                               |
-| `helm_version`       | SemVer version constraint to require                                                                                                                                                                                                                                                                                                                     | optional      | `~3`        |                                      |
-| `enabled`            | Whether to render deployments or not                                                                                                                                                                                                                                                                                                                     | optional      | `true`      |                                      |
-| `chart`              | Path to the chart to render                                                                                                                                                                                                                                                                                                                              | **required**  |             | `"path/to/some-chart"`               |
-| `namespace`          | Namespace to pass on to `helm`; when omitted, no namespace is passed                                                                                                                                                                                                                                                                                     | optional      | `""`        |                                      |
-| `release_name`       | Release name to pass to `helm`                                                                                                                                                                                                                                                                                                                           | **required**  |             | `"some-release"`                     |
-| `output_path`        | Base path to use for writing the manifests to disk.<br><br>The fully-qualified output path is built as follows (`config` refers to the top-level):<br>`config.output_path/deployment.name/<[config/deployment].release_name>`<br><br>Ignore if `--stdout` is passed to `render`, however the field remains required in the configuration file as of now. | **required**  |             |                                      |
-| `additional_options` | Pass additional options to `helm template`; you can use all supported options of the tool.<br><br>Common use case: use `--set-string` to provide a container tag to use.<br>This can be achieved by modifying the configuration file in your build pipeline using toml-cli, yq, jq                                                                       | optional      | `[]`        | `["--set-string image.tag=42"]`      |
-| `values`             | A list of base value files which are passed to each `helm template` call.<br>This is commonly used to provide a sane base config.                                                                                                                                                                                                                        | optional      | `[]`        |                                      |
-| `deployments`        | The list of deployments to render.                                                                                                                                                                                                                                                                                                                       | **required**  |             | `[[deployments]]`<br>`name = "edge"` |
+| **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
+| `version`            | Schema version to use                                                                                                                                                                                                                                                              |  **required** |             | `"v1"`                               |
+| `helm_version`       | SemVer version constraint to require                                                                                                                                                                                                                                               |    optional   | `~3`        |                                      |
+| `enabled`            | Whether to render deployments or not                                                                                                                                                                                                                                               |    optional   | `true`      |                                      |
+| `chart`              | Path to the chart to render                                                                                                                                                                                                                                                        |  **required** |             | `"path/to/some-chart"`               |
+| `namespace`          | Namespace to pass on to `helm`; when omitted, no namespace is passed                                                                                                                                                                                                               |    optional   | `""`        |                                      |
+| `release_name`       | Release name to pass to `helm`                                                                                                                                                                                                                                                     |  **required** |             | `"some-release"`                     |
+| `output_path`        | Base path to use for writing the manifests to disk.<br><br>The fully-qualified output path is built as follows (`config` refers to the top-level):<br>`config.output_path/deployment.name/<[config/deployment].release_name>`                                                      |  **required** |             |                                      |
+| `additional_options` | Pass additional options to `helm template`; you can use all supported options of the tool.<br><br>Common use case: use `--set-string` to provide a container tag to use.<br>This can be achieved by modifying the configuration file in your build pipeline using toml-cli, yq, jq |    optional   | `[]`        | `["--set-string image.tag=42"]`      |
+| `values`             | A list of base value files which are passed to each `helm template` call.<br>This is commonly used to provide a sane base config.                                                                                                                                                  |    optional   | `[]`        |                                      |
+| `deployments`        | The list of deployments to render.                                                                                                                                                                                                                                                 |  **required** |             | `[[deployments]]`<br>`name = "edge"` |
 
 Deployments can override several top-level fields:
 
@@ -69,28 +67,28 @@ A common use case we found was to provide the container tag:
 helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
 ```
 
-## Write to `stdout` For Piping Into Other Tools
-
-Use `--stdout` on `render` to write the result to `stdout` instead of disk.
-
-Please mind that the `output_path` field in configuration version `v1` remains **required**.
-
-Also mind that any other logs, e.g. info logs etc, are written to `stderr` by default.
-
 ## Installation
 
 ### Docker
 
 ```shell
-docker pull hendrikmaus/helm-templexer
-docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data hendrikmaus/helm-templexer render config_example.toml 
+# create the directory where helm-templexer will render to
+mkdir -p tests/data/manifests
+
+# let helm-templexers user id (1001) own the directory
+sudo chown -R 1001 tests/data/manifests
+
+# pull and run the image
+docker pull ghcr.io/hendrikmaus/helm-templexer
+docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data ghcr.io/hendrikmaus/helm-templexer render config_example.toml 
 ```
 
 Include `helm-templexer` in your `Dockerfile`:
 
 ```Dockerfile
-FROM hendrikmaus/helm-templexer AS helm-templexer-provider
-COPY --from=helm-templexer-provider /usr/local/bin/helm-templexer /usr/local/bin
+FROM ghcr.io/hendrikmaus/helm-templexer AS helm-templexer-provider
+COPY --from=helm-templexer-provider /usr/bin/helm-templexer /usr/bin
+COPY --from=helm-templexer-provider /usr/bin/helm /usr/bin
 ```
 
 ### Homebrew

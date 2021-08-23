@@ -171,16 +171,12 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            if !self.opts.stdout {
-                let fully_qualified_output_dir =
-                    format!("{}/{}/{}", output_dir, d.name, release_name);
-                cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
-
-                plan.output_paths
-                    .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
-            }
+            let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
+            cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
 
             plan.commands.insert(d.name.to_owned(), cmd);
+            plan.output_paths
+                .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
         }
 
         Ok(plan)
@@ -216,17 +212,15 @@ impl RenderCmd {
                     cmd.join(" ")
                 );
 
-                if !self.opts.stdout {
-                    match &plan.output_paths.get(deployment) {
-                        Some(p) => {
-                            debug!("cleaning up output path: {:?}", p);
-                            if p.exists() {
-                                std::fs::remove_dir_all(p)?;
-                            }
-                            std::fs::create_dir_all(p)?;
+                match &plan.output_paths.get(deployment) {
+                    Some(p) => {
+                        debug!("cleaning up output path: {:?}", p);
+                        if p.exists() {
+                            std::fs::remove_dir_all(p)?;
                         }
-                        None => (),
+                        std::fs::create_dir_all(p)?;
                     }
+                    None => (),
                 }
 
                 self.run_helm(&cmd.join(" "))?;
