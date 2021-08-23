@@ -1,6 +1,6 @@
 [package]
 name = "helm-templexer"
-version = "0.2.11"
+version = "0.3.0"
 authors = ["Hendrik Maus <aidentailor@gmail.com>"]
 edition = "2018"
 
