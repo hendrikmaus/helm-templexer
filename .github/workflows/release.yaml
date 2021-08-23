@@ -3,6 +3,10 @@ on:
     types:
       - published
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   release-binaries:
     name: Release ${{ matrix.target }}
@@ -37,6 +41,9 @@ jobs:
   containerize:
     name: Build & push container image
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
