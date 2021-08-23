@@ -1,15 +1,11 @@
 use assert_cmd::prelude::*;
-use predicates::prelude::*;
-use pretty_assertions::assert_eq;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-const BIN_NAME: &'static str = "helm-templexer";
-
 #[test]
 fn render_config_example() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = Command::cargo_bin("helm-templexer")?;
 
     cmd.current_dir("tests/data")
         .arg("render")
@@ -60,53 +56,6 @@ fn render_config_example() -> anyhow::Result<()> {
 
     // clean up file wrote to disk
     std::fs::remove_dir_all("tests/data/manifests")?;
-
-    Ok(())
-}
-
-#[test]
-fn render_config_example_to_stdout() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-
-    cmd.current_dir("tests/data")
-        .arg("render")
-        .arg("--stdout")
-        .arg("config_example.toml");
-
-    // we cannot simply match the stdout data against a pre-rendered file because helm
-    // can change the order of resources - hence a test would be flaky.
-    // therefore, we'll use samples to assert the likely correctness of the output
-    //
-    // So this is intentionally NOT used:
-    // let fixture_contents = std::fs::read_to_string("tests/data/manifest.yaml")?;
-    // cmd.assert().success().stdout(fixture_contents);
-
-    let deployment_edge = "---
-# Source: nginx-chart/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app-edge";
-
-    let deployment_stage = "---
-# Source: nginx-chart/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app-stage";
-
-    let deployment_prod = "---
-# Source: nginx-chart/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app-prod-eu-w4";
-
-    let samples = predicate::str::starts_with("---")
-        .and(predicate::str::contains(deployment_edge))
-        .and(predicate::str::contains(deployment_stage))
-        .and(predicate::str::contains(deployment_prod));
-    cmd.assert().success().stdout(samples);
 
     Ok(())
 }
