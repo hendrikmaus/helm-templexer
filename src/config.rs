@@ -96,6 +96,7 @@ impl Config {
                 )
             })?;
 
+            // if we're already next to the config file, the base path will be empty
             if !base_path.to_string_lossy().is_empty() {
                 log::trace!("changing base path for execution to {:?}", base_path);
                 std::env::set_current_dir(base_path)?;
