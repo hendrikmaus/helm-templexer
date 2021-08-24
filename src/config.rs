@@ -257,24 +257,13 @@ mod tests {
 
     #[test]
     fn disabled_files_can_be_skipped_during_validation() {
-        let cfg = Config {
-            version: "invalid_version".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.version = "invalid".to_string();
+        cfg.enabled = Some(false);
+
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
 
         cfg.validate(&ValidationOpts {
             skip_disabled: true,
@@ -285,33 +274,18 @@ mod tests {
 
     #[test]
     fn disabled_deployments_can_be_skipped_during_validation() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("tests/data/nginx-chart"),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![
-                Deployment {
-                    name: "edge".to_string(),
-                    enabled: Option::from(true),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-                Deployment {
-                    name: "stage".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: Option::from(vec![PathBuf::from("does-not-exist")]),
-                },
-            ],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("tests/data/nginx-chart");
+
+        let mut edge_deployment = get_deployment();
+        edge_deployment.name = "edge".to_string();
+
+        let mut stage_deployment = get_deployment();
+        stage_deployment.name = " stage".to_string();
+        stage_deployment.enabled = Some(false);
+        stage_deployment.values = Some(vec![PathBuf::from("does-not-exist")]);
+
+        cfg.deployments = vec![edge_deployment, stage_deployment];
 
         cfg.validate(&ValidationOpts {
             skip_disabled: true,
@@ -323,33 +297,18 @@ mod tests {
     #[test]
     #[should_panic]
     fn fail_if_all_deployments_are_disabled() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![
-                Deployment {
-                    name: "edge".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-                Deployment {
-                    name: "stage".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-            ],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("tests/data/nginx-chart");
+
+        let mut edge_deployment = get_deployment();
+        edge_deployment.name = "edge".to_string();
+        edge_deployment.enabled = Some(false);
+
+        let mut stage_deployment = get_deployment();
+        stage_deployment.name = " stage".to_string();
+        stage_deployment.enabled = Some(false);
+
+        cfg.deployments = vec![edge_deployment, stage_deployment];
 
         cfg.validate(&ValidationOpts::default()).unwrap();
     }
