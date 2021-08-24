@@ -201,6 +201,33 @@ impl Config {
 mod tests {
     use super::*;
 
+    // TODO these are duplicated in render_cmd as well
+    //      time to create a unit test module?
+    fn get_config() -> Config {
+        Config {
+            version: "v1".to_string(),
+            helm_version: None,
+            enabled: Some(true),
+            chart: Default::default(),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![],
+        }
+    }
+
+    fn get_deployment() -> Deployment {
+        Deployment {
+            name: "".to_string(),
+            enabled: Some(true),
+            release_name: None,
+            additional_options: None,
+            values: None,
+        }
+    }
+
     #[test]
     #[should_panic]
     fn input_file_does_not_exist() {
@@ -217,24 +244,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn schema_version_must_be_v1() {
-        let cfg = Config {
-            version: "v2".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.version = "invalid".to_string();
+        cfg.enabled = Some(false);
+
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
 
         cfg.check_schema_version().unwrap();
     }
