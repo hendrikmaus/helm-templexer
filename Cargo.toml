@@ -26,6 +26,7 @@ serde_any = "0.5"
 serde = "1"
 subprocess = "0.2"
 indexmap = "1"
+regex = "1"
 
 [dev-dependencies]
 assert_cmd = "1"

@@ -65,6 +65,10 @@ pub struct RenderCmdOpts {
     /// Run `helm dependencies update` before rendering deployments
     #[structopt(short, long)]
     update_dependencies: bool,
+
+    /// Pass this flag to render selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.toml'
+    #[structopt(short, long)]
+    filter: Option<String>,
 }
 
 fn main() -> anyhow::Result<()> {

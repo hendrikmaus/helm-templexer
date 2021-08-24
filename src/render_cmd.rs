@@ -6,6 +6,7 @@ use log::{debug, info};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
+use regex::{Regex, RegexSet};
 
 /// Special name used in the commands map of a plan when a helm dependency update is requested
 const PRE_CMD_DEPENDENCY_UPDATE: &str = "helm-dependency-update";
@@ -151,8 +152,15 @@ impl RenderCmd {
 
             let mut cmd = base_cmd.clone();
 
+            // check if "--filter is set and filter the deployment values."
+            // return type will be a vector
+            let filtered_values = match &self.opts.filter {
+                Some(opts) => self.filter_deployment(opts.clone(), d.values.clone()),
+                None => d.values.clone(),
+            };
+
             let values: Vec<String> = self
-                .get_values_as_strings(&d.values)?
+                .get_values_as_strings(&filtered_values)?
                 .iter()
                 .map(|f| format!("--values={}", f))
                 .collect();
@@ -286,6 +294,17 @@ impl RenderCmd {
             }
         }
         Ok(buffer)
+    }
+
+    // Filter out the deployment values that match the regex
+    fn filter_deployment(&self, regex: String, values: Option<Vec<PathBuf>>) -> Option<Vec<PathBuf>> {
+        let mut filtered_values: Option<Vec<PathBuf>> = Some(vec![]);
+        let values_as_string = self.get_values_as_strings(&values);
+
+        
+
+        // return filtered values
+        return values;
     }
 }
 
