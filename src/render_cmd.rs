@@ -299,7 +299,7 @@ mod tests {
     /// This is useful once `Config` changes as only this function needs to be changed, not every test case
     fn get_config() -> Config {
         Config {
-            version: "v1".to_string(),
+            version: "v2".to_string(),
             helm_version: None,
             enabled: Option::from(true),
             chart: Default::default(),

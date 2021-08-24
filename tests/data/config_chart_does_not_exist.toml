@@ -1,4 +1,4 @@
-version = "v1"
+version = "v2"
 enabled = true
 chart = "some-non-existing-chart"
 namespace = "my-namespace"

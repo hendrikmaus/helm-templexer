@@ -6,7 +6,7 @@ Render Helm charts for multiple environments with _explicit config_ while keepin
 
 ```shell
 cat > my-app.toml <<EOF
-version = "v1"
+version = "v2"
 chart = "tests/data/nginx-chart"
 release_name = "my-app"
 output_path = "manifests"
@@ -36,7 +36,7 @@ Please mind that all paths are evaluated relative to the working directory you c
 
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
-| `version`            | Schema version to use                                                                                                                                                                                                                                                              |  **required** |             | `"v1"`                               |
+| `version`            | Schema version to use                                                                                                                                                                                                                                                              |  **required** |             | `"v2"`                               |
 | `helm_version`       | SemVer version constraint to require                                                                                                                                                                                                                                               |    optional   | `~3`        |                                      |
 | `enabled`            | Whether to render deployments or not                                                                                                                                                                                                                                               |    optional   | `true`      |                                      |
 | `chart`              | Path to the chart to render                                                                                                                                                                                                                                                        |  **required** |             | `"path/to/some-chart"`               |

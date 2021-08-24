@@ -145,8 +145,8 @@ impl Config {
 
     /// Check the given schema version; should be extended once multiple are available
     fn check_schema_version(&self) -> anyhow::Result<()> {
-        if self.version != "v1" {
-            bail!("invalid schema version used; only 'v1' is supported")
+        if self.version != "v2" {
+            bail!("invalid schema version used; only 'v2' is supported")
         }
 
         Ok(())
@@ -198,9 +198,9 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn schema_version_must_be_v1() {
+    fn schema_version_must_be_v2() {
         let cfg = Config {
-            version: "v2".to_string(),
+            version: "v1".to_string(),
             helm_version: None,
             enabled: Option::from(false),
             chart: Default::default(),
@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn disabled_deployments_can_be_skipped_during_validation() {
         let cfg = Config {
-            version: "v1".to_string(),
+            version: "v2".to_string(),
             helm_version: None,
             enabled: Option::from(true),
             chart: PathBuf::from("tests/data/nginx-chart"),
@@ -288,7 +288,7 @@ mod tests {
     #[should_panic]
     fn fail_if_all_deployments_are_disabled() {
         let cfg = Config {
-            version: "v1".to_string(),
+            version: "v2".to_string(),
             helm_version: None,
             enabled: Option::from(false),
             chart: Default::default(),

@@ -1,5 +1,5 @@
 {
-  "version": "v1",
+  "version": "v2",
   "enabled": true,
   "chart": "nginx-chart",
   "namespace": "my-namespace",
