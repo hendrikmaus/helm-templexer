@@ -191,6 +191,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
+dependencies = [
+ "atty",
+ "lazy_static",
+ "winapi",
+]
+
+[[package]]
 name = "ctor"
 version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -287,6 +298,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "format_serde_error"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5837b8e6a4001f99fe4746767fb7379e8510c508a843caa136cc12ed9c0bad0"
+dependencies = [
+ "colored",
+ "serde",
+ "serde_json",
+ "serde_yaml 0.8.19",
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -331,6 +355,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "env_logger",
+ "format_serde_error",
  "indexmap",
  "log 0.4.14",
  "predicates",
@@ -762,7 +787,7 @@ dependencies = [
  "serde-xml-any",
  "serde_json",
  "serde_urlencoded",
- "serde_yaml",
+ "serde_yaml 0.7.5",
  "toml",
 ]
 
@@ -808,6 +833,18 @@ checksum = "ef8099d3df28273c99a1728190c7a9f19d444c941044f64adf986bee7ec53051"
 dependencies = [
  "dtoa",
  "linked-hash-map",
+ "serde",
+ "yaml-rust",
+]
+
+[[package]]
+name = "serde_yaml"
+version = "0.8.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6375dbd828ed6964c3748e4ef6d18e7a175d408ffe184bca01698d0c73f915a9"
+dependencies = [
+ "dtoa",
+ "indexmap",
  "serde",
  "yaml-rust",
 ]
