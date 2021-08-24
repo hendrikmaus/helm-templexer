@@ -1,6 +1,9 @@
 use anyhow::Context;
 use std::path::PathBuf;
-use structopt::StructOpt;
+use structopt::{
+    clap::AppSettings::{ColoredHelp, GlobalVersion, VersionlessSubcommands},
+    StructOpt,
+};
 use structopt_flags::GetWithDefault;
 
 use validate_cmd::ValidateCmd;
@@ -14,7 +17,8 @@ mod validate_cmd;
 #[derive(StructOpt, Debug)]
 #[structopt(
     name = "helm-templexer",
-    about = "Render Helm charts for multiple environments using explicit config"
+    about = "Render Helm charts for multiple environments using explicit config",
+    global_settings = &[ColoredHelp, VersionlessSubcommands, GlobalVersion]
 )]
 struct Args {
     #[structopt(flatten)]
@@ -58,9 +62,9 @@ pub struct RenderCmdOpts {
     #[structopt(short, long, multiple = true)]
     additional_options: Option<Vec<String>>,
 
-    /// Print rendered manifests to stdout
+    /// Run `helm dependencies update` before rendering deployments
     #[structopt(short, long)]
-    stdout: bool,
+    update_dependencies: bool,
 }
 
 fn main() -> anyhow::Result<()> {

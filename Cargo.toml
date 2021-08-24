@@ -1,6 +1,6 @@
 [package]
 name = "helm-templexer"
-version = "1.0.0"
+version = "0.3.0"
 authors = ["Hendrik Maus <aidentailor@gmail.com>"]
 edition = "2018"
 
@@ -25,6 +25,7 @@ thiserror = "1"
 serde_any = "0.5"
 serde = "1"
 subprocess = "0.2"
+indexmap = "1"
 
 [dev-dependencies]
 assert_cmd = "1"
