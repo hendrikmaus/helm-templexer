@@ -151,16 +151,12 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            if !self.opts.stdout {
-                let fully_qualified_output_dir =
-                    format!("{}/{}/{}", output_dir, d.name, release_name);
-                cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
-
-                plan.output_paths
-                    .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
-            }
+            let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
+            cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
 
             plan.commands.insert(d.name.to_owned(), cmd);
+            plan.output_paths
+                .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
         }
 
         Ok(plan)
@@ -177,17 +173,15 @@ impl RenderCmd {
                 cmd.join(" ")
             );
 
-            if !self.opts.stdout {
-                match &plan.output_paths.get(deployment) {
-                    Some(p) => {
-                        debug!("cleaning up output path: {:?}", p);
-                        if p.exists() {
-                            std::fs::remove_dir_all(p)?;
-                        }
-                        std::fs::create_dir_all(p)?;
+            match &plan.output_paths.get(deployment) {
+                Some(p) => {
+                    debug!("cleaning up output path: {:?}", p);
+                    if p.exists() {
+                        std::fs::remove_dir_all(p)?;
                     }
-                    None => (),
+                    std::fs::create_dir_all(p)?;
                 }
+                None => (),
             }
 
             // `helm` logs that it wanted to exit 1 but actually exits 0:
@@ -222,12 +216,6 @@ impl RenderCmd {
                     cmd.join(" "),
                     result.stdout_str()
                 );
-            }
-
-            // Helm seems to automatically insert Yaml's document separators (`---`)
-            // so we do not check for them again
-            if self.opts.stdout {
-                print!("{}", result.stdout_str());
             }
         }
 
@@ -276,7 +264,6 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
-                stdout: false,
             },
         };
 
@@ -310,7 +297,6 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
-                stdout: false,
             },
         };
 
@@ -352,7 +338,6 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
-                stdout: false,
             },
         };
 
@@ -386,7 +371,6 @@ mod tests {
                 input_files: vec![],
                 helm_bin: None,
                 additional_options: None,
-                stdout: false,
             },
         };
 
@@ -429,7 +413,6 @@ mod tests {
                 additional_options: Option::from(
                     vec!["--set-string=image.tag=424242a".to_string()],
                 ),
-                stdout: false,
             },
         };
 
