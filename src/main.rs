@@ -61,6 +61,10 @@ pub struct RenderCmdOpts {
     /// Pass additional options to the underlying 'helm template' call, e.g. '--set-string image.tag=${revision}'
     #[structopt(short, long, multiple = true)]
     additional_options: Option<Vec<String>>,
+
+    /// Run `helm dependencies update` before rendering deployments
+    #[structopt(short, long)]
+    update_dependencies: bool,
 }
 
 fn main() -> anyhow::Result<()> {
