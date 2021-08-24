@@ -6,7 +6,7 @@ use log::{debug, info};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
-use regex::{Regex, RegexSet};
+use regex::{Regex};
 
 /// Special name used in the commands map of a plan when a helm dependency update is requested
 const PRE_CMD_DEPENDENCY_UPDATE: &str = "helm-dependency-update";
@@ -154,8 +154,9 @@ impl RenderCmd {
 
             // check if "--filter is set and filter the deployment values."
             // return type will be a vector
+
             let filtered_values = match &self.opts.filter {
-                Some(opts) => self.filter_deployment(opts.clone(), d.values.clone()),
+                Some(opts) => self.filter_deployment(opts.clone(), &d.name, d.values.clone()),
                 None => d.values.clone(),
             };
 
@@ -296,16 +297,29 @@ impl RenderCmd {
         Ok(buffer)
     }
 
-    // Filter out the deployment values that match the regex
-    fn filter_deployment(&self, regex: String, values: Option<Vec<PathBuf>>) -> Option<Vec<PathBuf>> {
-        let mut filtered_values: Option<Vec<PathBuf>> = Some(vec![]);
-        let values_as_string = self.get_values_as_strings(&values);
+    ///  Filter out the deployment values that match the regex
+    fn filter_deployment(&self, regex: String, name: &String, values: Option<Vec<PathBuf>>) -> Option<Vec<PathBuf>> {
+        let is_name_filtered = self.is_name_filtered(regex, &name);
 
-        
-
-        // return filtered values
-        return values;
+        if is_name_filtered {
+            return values;
+        }
+        return Some(vec![]);
     }
+
+    
+
+    /// Check if deployment name is filtered
+    fn is_name_filtered(&self, regex: String, name: &String) -> bool {
+        let regex_string = format!("[{}]{}", name, "{4,}");
+        let is_match = Regex::new(&regex_string.to_string()).unwrap().is_match(&regex.to_string());
+
+        if is_match {
+            return true;
+        }
+        return false;
+    }
+
 }
 
 #[cfg(test)]
@@ -340,6 +354,7 @@ mod tests {
                 helm_bin: None,
                 additional_options: None,
                 update_dependencies: false,
+                filter: vec![],
             },
         }
     }
