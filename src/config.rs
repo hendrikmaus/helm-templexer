@@ -97,7 +97,7 @@ impl Config {
             })?;
 
             // if we're already next to the config file, the base path will be empty
-            if !base_path.as_os_str().is_empty() {
+            if !base_path.components().next().is_none() {
                 log::trace!("changing base path for execution to {:?}", base_path);
                 std::env::set_current_dir(base_path)?;
             }
