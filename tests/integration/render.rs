@@ -3,9 +3,11 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
+const BIN_NAME: &'static str = env!("CARGO_PKG_NAME");
+
 #[test]
 fn render_config_example() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("helm-templexer")?;
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
     cmd.current_dir("tests/data")
         .arg("render")
