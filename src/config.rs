@@ -67,12 +67,33 @@ impl Config {
     pub fn load<S: AsRef<Path>>(file: S) -> anyhow::Result<Config> {
         Self::check_file_exists_and_readable(file.as_ref())?;
 
-        match serde_any::from_file(file) {
-            Ok(cfg) => Ok(cfg),
-            Err(err) => Err(anyhow!(
-                "Failed to load configuration from file, because:\n{}",
-                err
-            )),
+        let format = serde_any::guess_format(&file)
+            .ok_or_else(|| anyhow!("unable to determine configuration file format"))?;
+
+        let cfg = std::fs::read_to_string(&file)?;
+        match format {
+            serde_any::Format::Yaml => {
+                let cfg = serde_yaml::from_str::<Config>(&cfg)
+                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+                Ok(cfg)
+            }
+            serde_any::Format::Json => {
+                let cfg = serde_json::from_str::<Config>(&cfg)
+                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+                Ok(cfg)
+            }
+            serde_any::Format::Toml => match toml::from_str::<Config>(&cfg) {
+                Ok(cfg) => Ok(cfg),
+                Err(err) => {
+                    let (line, column) = err.line_col().unwrap_or_default();
+                    Err(format_serde_error::SerdeError::new(
+                        cfg.clone(),
+                        (err.into(), Some(line), Some(column)),
+                    )
+                    .into())
+                }
+            },
+            _ => bail!("unsupported config file format"),
         }
     }
 
