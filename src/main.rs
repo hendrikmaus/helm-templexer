@@ -66,7 +66,7 @@ pub struct RenderCmdOpts {
     #[structopt(short, long)]
     update_dependencies: bool,
 
-    /// Pass this flag to render selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.toml'
+    /// Pass a regular expression to this flag to render only selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.toml'
     #[structopt(short, long)]
     filter: Option<String>,
 }
