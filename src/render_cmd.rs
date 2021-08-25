@@ -180,12 +180,28 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
-            cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
 
-            plan.commands.insert(d.name.to_owned(), cmd);
-            plan.output_paths
-                .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
+            // if the filter flag is passed, include only the filtered deployment. Otherwise allow all
+            match &self.opts.filter {
+                Some(k) => {
+                    if self.is_name_filtered(k.to_string(), &d.name) {
+                        let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
+                        cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
+
+                        plan.commands.insert(d.name.to_owned(), cmd);
+                        plan.output_paths
+                            .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
+                    }
+                },
+                None => {
+                    let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
+                    cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
+
+                    plan.commands.insert(d.name.to_owned(), cmd);
+                    plan.output_paths
+                        .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
+                },
+            }
         }
 
         Ok(plan)
