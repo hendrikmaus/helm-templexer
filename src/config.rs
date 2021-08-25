@@ -82,17 +82,11 @@ impl Config {
                     .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
                 Ok(cfg)
             }
-            serde_any::Format::Toml => match toml::from_str::<Config>(&cfg) {
-                Ok(cfg) => Ok(cfg),
-                Err(err) => {
-                    let (line, column) = err.line_col().unwrap_or_default();
-                    Err(format_serde_error::SerdeError::new(
-                        cfg.clone(),
-                        (err.into(), Some(line), Some(column)),
-                    )
-                    .into())
-                }
-            },
+            serde_any::Format::Toml => {
+                let cfg = toml::from_str::<Config>(&cfg)
+                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+                Ok(cfg)
+            }
             _ => bail!("unsupported config file format"),
         }
     }

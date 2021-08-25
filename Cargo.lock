@@ -312,13 +312,13 @@ dependencies = [
 [[package]]
 name = "format_serde_error"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5837b8e6a4001f99fe4746767fb7379e8510c508a843caa136cc12ed9c0bad0"
+source = "git+https://github.com/hendrikmaus/format_serde_error.git?branch=toml#cc3f3fe4565365d0edfb3e75d91bdc995d2d8196"
 dependencies = [
  "colored",
  "serde",
  "serde_json",
  "serde_yaml 0.8.19",
+ "toml 0.5.8",
  "unicode-segmentation",
 ]
 
