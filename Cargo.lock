@@ -335,6 +335,7 @@ dependencies = [
  "log 0.4.14",
  "predicates",
  "pretty_assertions",
+ "regex",
  "serde",
  "serde_any",
  "structopt",
