@@ -11,7 +11,7 @@ fn render_config_example() -> anyhow::Result<()> {
 
     cmd.current_dir("tests/data")
         .arg("render")
-        .arg("config_example.toml");
+        .arg("config_example.yaml");
 
     cmd.assert().success();
 

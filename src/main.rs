@@ -42,7 +42,7 @@ enum SubCmd {
 
 #[derive(StructOpt, Debug)]
 pub struct ValidateCmdOpts {
-    /// Configuration file(s) to validate (supported formats: toml, yaml, json)
+    /// Configuration file(s) to validate (supported format: yaml)
     input_files: Vec<PathBuf>,
 
     #[structopt(short, long, about = "Skip validation if `enabled` is set to false")]
@@ -51,7 +51,7 @@ pub struct ValidateCmdOpts {
 
 #[derive(StructOpt, Debug)]
 pub struct RenderCmdOpts {
-    /// Configuration file(s) to render deployments for (supported formats: toml, yaml, json)
+    /// Configuration file(s) to render deployments for (supported format: yaml)
     input_files: Vec<PathBuf>,
 
     /// (not implemented) Optional helm binary to use; defaults to the binary found in the PATH or fails, if none is found
@@ -66,7 +66,7 @@ pub struct RenderCmdOpts {
     #[structopt(short, long)]
     update_dependencies: bool,
 
-    /// Pass a regular expression to this flag to render only selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.toml'
+    /// Pass a regular expression to this flag to render only selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.yaml'
     #[structopt(short, long)]
     filter: Option<String>,
 }
