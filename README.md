@@ -65,6 +65,12 @@ A common use case we found was to provide the container tag:
 helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
 ```
 
+Use `--filter` to render a specific deployment. Example: To render only the `prod`, pass the regex to the filter option.
+
+```shell
+helm-templexer render --filter="prod" my-app.toml
+```
+
 ## Installation
 
 ### Docker
