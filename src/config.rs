@@ -68,28 +68,10 @@ impl Config {
     pub fn load<S: AsRef<Path>>(file: S) -> anyhow::Result<Config> {
         Self::check_file_exists_and_readable(file.as_ref())?;
 
-        let format = serde_any::guess_format(&file)
-            .ok_or_else(|| anyhow!("unable to determine configuration file format"))?;
-
         let cfg = std::fs::read_to_string(&file)?;
-        match format {
-            serde_any::Format::Yaml => {
-                let cfg = serde_yaml::from_str::<Config>(&cfg)
-                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
-                Ok(cfg)
-            }
-            serde_any::Format::Json => {
-                let cfg = serde_json::from_str::<Config>(&cfg)
-                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
-                Ok(cfg)
-            }
-            serde_any::Format::Toml => {
-                let cfg = toml::from_str::<Config>(&cfg)
-                    .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
-                Ok(cfg)
-            }
-            _ => bail!("unsupported config file format"),
-        }
+        let cfg = serde_yaml::from_str::<Config>(&cfg)
+            .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+        Ok(cfg)
     }
 
     /// Validate the loaded configuration file
@@ -253,7 +235,7 @@ mod tests {
     #[test]
     fn input_file_exists() {
         // TODO feels more like an integration test, rather than a unit test
-        Config::load("tests/data/config_example.toml").unwrap();
+        Config::load("tests/data/config_example.yaml").unwrap();
     }
 
     #[test]
