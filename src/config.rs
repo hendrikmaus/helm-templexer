@@ -178,8 +178,8 @@ impl Config {
 
     /// Check the given schema version; should be extended once multiple are available
     fn check_schema_version(&self) -> anyhow::Result<()> {
-        if self.version != "v1" {
-            bail!("invalid schema version used; only 'v1' is supported")
+        if self.version != "v2" {
+            bail!("invalid schema version used; only 'v2' is supported")
         }
 
         Ok(())
@@ -220,7 +220,7 @@ mod tests {
     //      time to create a unit test module?
     fn get_config() -> Config {
         Config {
-            version: "v1".to_string(),
+            version: "v2".to_string(),
             helm_version: None,
             enabled: Some(true),
             chart: Default::default(),

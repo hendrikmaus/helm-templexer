@@ -1,4 +1,4 @@
-#version = "v1"
+#version = "v2"
 enabled = true
 namespace = "my-namespace"
 release_name = "my-app-edge"
