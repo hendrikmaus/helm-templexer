@@ -54,7 +54,11 @@ impl RenderCmd {
             info!("processing {:?}", file);
 
             let cfg = Config::load(&file)?;
-            cfg.validate(&ValidationOpts::default())?;
+            let opts = ValidationOpts {
+                config_file: Some(file.clone()),
+                ..Default::default()
+            };
+            cfg.validate(&opts)?;
 
             let plan = self.plan(&cfg)?;
 

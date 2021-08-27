@@ -2,8 +2,6 @@
 
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
-> All **paths** in the workload config are relative to callers working directory.
-
 ```shell
 cat > my-app.toml <<EOF
 version = "v1"

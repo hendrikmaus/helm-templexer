@@ -59,6 +59,7 @@ pub struct Deployment {
 #[derive(Default)]
 pub struct ValidationOpts {
     pub skip_disabled: bool,
+    pub config_file: Option<PathBuf>,
 }
 
 impl Config {
@@ -70,7 +71,7 @@ impl Config {
         match serde_any::from_file(file) {
             Ok(cfg) => Ok(cfg),
             Err(err) => Err(anyhow!(
-                "Failed to load configuration from file, because:\n{}",
+                "Failed to load configuration from file, because:\n{:?}",
                 err
             )),
         }
@@ -82,6 +83,23 @@ impl Config {
             if !enabled && opts.skip_disabled {
                 info!("Skipped validation of disabled file");
                 return Ok(());
+            }
+        }
+
+        if let Some(config_file) = &opts.config_file {
+            // change the working directory to the place where the config file is, so that all
+            // paths are relative to the config file instead of the location where the templexer is called from
+            let base_path = config_file.parent().ok_or_else(|| {
+                anyhow!(
+                    "could not determine base path of given configuration file {:?}",
+                    config_file
+                )
+            })?;
+
+            // if we're already next to the config file, the base path will be empty
+            if base_path.components().next().is_some() {
+                log::trace!("changing base path for execution to {:?}", base_path);
+                std::env::set_current_dir(base_path)?;
             }
         }
 
@@ -183,6 +201,33 @@ impl Config {
 mod tests {
     use super::*;
 
+    // TODO these are duplicated in render_cmd as well
+    //      time to create a unit test module?
+    fn get_config() -> Config {
+        Config {
+            version: "v1".to_string(),
+            helm_version: None,
+            enabled: Some(true),
+            chart: Default::default(),
+            namespace: None,
+            release_name: "".to_string(),
+            output_path: Default::default(),
+            additional_options: None,
+            values: None,
+            deployments: vec![],
+        }
+    }
+
+    fn get_deployment() -> Deployment {
+        Deployment {
+            name: "".to_string(),
+            enabled: Some(true),
+            release_name: None,
+            additional_options: None,
+            values: None,
+        }
+    }
+
     #[test]
     #[should_panic]
     fn input_file_does_not_exist() {
@@ -199,87 +244,52 @@ mod tests {
     #[test]
     #[should_panic]
     fn schema_version_must_be_v1() {
-        let cfg = Config {
-            version: "v2".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.version = "invalid".to_string();
+        cfg.enabled = Some(false);
+
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
 
         cfg.check_schema_version().unwrap();
     }
 
     #[test]
     fn disabled_files_can_be_skipped_during_validation() {
-        let cfg = Config {
-            version: "invalid_version".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![Deployment {
-                name: "edge".to_string(),
-                enabled: Option::from(true),
-                release_name: None,
-                additional_options: None,
-                values: None,
-            }],
-        };
+        let mut cfg = get_config();
+        cfg.version = "invalid".to_string();
+        cfg.enabled = Some(false);
+
+        let mut deployment = get_deployment();
+        deployment.name = "edge".to_string();
+        cfg.deployments = vec![deployment];
 
         cfg.validate(&ValidationOpts {
             skip_disabled: true,
+            config_file: Default::default(),
         })
         .unwrap();
     }
 
     #[test]
     fn disabled_deployments_can_be_skipped_during_validation() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(true),
-            chart: PathBuf::from("tests/data/nginx-chart"),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![
-                Deployment {
-                    name: "edge".to_string(),
-                    enabled: Option::from(true),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-                Deployment {
-                    name: "stage".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: Option::from(vec![PathBuf::from("does-not-exist")]),
-                },
-            ],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("tests/data/nginx-chart");
+
+        let mut edge_deployment = get_deployment();
+        edge_deployment.name = "edge".to_string();
+
+        let mut stage_deployment = get_deployment();
+        stage_deployment.name = " stage".to_string();
+        stage_deployment.enabled = Some(false);
+        stage_deployment.values = Some(vec![PathBuf::from("does-not-exist")]);
+
+        cfg.deployments = vec![edge_deployment, stage_deployment];
 
         cfg.validate(&ValidationOpts {
             skip_disabled: true,
+            config_file: Default::default(),
         })
         .unwrap();
     }
@@ -287,33 +297,18 @@ mod tests {
     #[test]
     #[should_panic]
     fn fail_if_all_deployments_are_disabled() {
-        let cfg = Config {
-            version: "v1".to_string(),
-            helm_version: None,
-            enabled: Option::from(false),
-            chart: Default::default(),
-            namespace: None,
-            release_name: "".to_string(),
-            output_path: Default::default(),
-            additional_options: None,
-            values: None,
-            deployments: vec![
-                Deployment {
-                    name: "edge".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-                Deployment {
-                    name: "stage".to_string(),
-                    enabled: Option::from(false),
-                    release_name: None,
-                    additional_options: None,
-                    values: None,
-                },
-            ],
-        };
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("tests/data/nginx-chart");
+
+        let mut edge_deployment = get_deployment();
+        edge_deployment.name = "edge".to_string();
+        edge_deployment.enabled = Some(false);
+
+        let mut stage_deployment = get_deployment();
+        stage_deployment.name = " stage".to_string();
+        stage_deployment.enabled = Some(false);
+
+        cfg.deployments = vec![edge_deployment, stage_deployment];
 
         cfg.validate(&ValidationOpts::default()).unwrap();
     }
