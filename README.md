@@ -2,8 +2,6 @@
 
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
-> All **paths** in the workload config are relative to callers working directory.
-
 ```shell
 cat > my-app.toml <<EOF
 version = "v2"
@@ -65,6 +63,12 @@ A common use case we found was to provide the container tag:
 
 ```shell
 helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
+```
+
+Use `--filter` to render a specific deployment. Example: To render only the `prod`, pass the regex to the filter option.
+
+```shell
+helm-templexer render --filter="prod" my-app.toml
 ```
 
 ## Installation
