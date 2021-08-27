@@ -19,7 +19,12 @@ impl ValidateCmd {
         log::debug!("validation options: {:?}", self.opts);
 
         for file in &self.opts.input_files {
-            Config::load(&file)?.validate(&ValidationOpts::default())?;
+            let opts = ValidationOpts {
+                config_file: Some(file.clone()),
+                ..Default::default()
+            };
+
+            Config::load(&file)?.validate(&opts)?;
         }
 
         Ok(())

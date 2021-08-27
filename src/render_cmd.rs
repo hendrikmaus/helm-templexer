@@ -3,6 +3,7 @@ use crate::RenderCmdOpts;
 use anyhow::bail;
 use indexmap::map::IndexMap;
 use log::{debug, info};
+use regex::Regex;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use subprocess::{Exec, Redirection};
@@ -53,7 +54,11 @@ impl RenderCmd {
             info!("processing {:?}", file);
 
             let cfg = Config::load(&file)?;
-            cfg.validate(&ValidationOpts::default())?;
+            let opts = ValidationOpts {
+                config_file: Some(file.clone()),
+                ..Default::default()
+            };
+            cfg.validate(&opts)?;
 
             let plan = self.plan(&cfg)?;
 
@@ -142,6 +147,18 @@ impl RenderCmd {
         }
 
         for d in &cfg.deployments {
+            if self.opts.filter.is_some()
+                && !self.is_name_filtered(
+                    self.opts
+                        .filter
+                        .as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("failed to extract filter"))?,
+                    &d.name,
+                )?
+            {
+                info!(" - (skip) {}", d.name);
+                continue;
+            }
             if let Some(enabled) = d.enabled {
                 if !enabled {
                     info!(" - (skip) {}", d.name);
@@ -287,6 +304,11 @@ impl RenderCmd {
         }
         Ok(buffer)
     }
+
+    /// Check if deployment name is filtered
+    fn is_name_filtered(&self, regex: &str, name: &str) -> anyhow::Result<bool> {
+        Ok(Regex::new(regex)?.is_match(name))
+    }
 }
 
 #[cfg(test)]
@@ -321,6 +343,7 @@ mod tests {
                 helm_bin: None,
                 additional_options: None,
                 update_dependencies: false,
+                filter: None,
             },
         }
     }
@@ -473,5 +496,189 @@ mod tests {
             &expected_helm_cmd,
             res.pre_commands.get(PRE_CMD_DEPENDENCY_UPDATE).unwrap()
         );
+    }
+
+    #[test]
+    fn filter_only_edge_deployment() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge_eu_w4_deployment = get_deployment();
+        let mut stage_eu_w4_deployment = get_deployment();
+        let mut prod_as_e1_deployment = get_deployment();
+        let mut prod_eu_w4_deployment = get_deployment();
+        let mut prod_us_c1_deployment = get_deployment();
+
+        edge_eu_w4_deployment.name = "edge_eu_w4_deployment".to_string();
+        stage_eu_w4_deployment.name = "stage_eu_w4_deployment".to_string();
+        prod_as_e1_deployment.name = "prod_as_e1_deployment".to_string();
+        prod_eu_w4_deployment.name = "prod_eu_w4_deployment".to_string();
+        prod_us_c1_deployment.name = "prod_us_c1_deployment".to_string();
+
+        cfg.deployments = vec![
+            edge_eu_w4_deployment,
+            stage_eu_w4_deployment,
+            prod_as_e1_deployment,
+            prod_eu_w4_deployment,
+            prod_us_c1_deployment,
+        ];
+
+        let mut cmd = get_cmd();
+        cmd.opts.filter = Option::from("edge".to_string());
+
+        let res = cmd.plan(&cfg).unwrap();
+        let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/edge_eu_w4_deployment/some-release";
+        let expected_helm_cmd: Vec<String> = expected_helm_cmd
+            .split_whitespace()
+            .map(String::from)
+            .collect();
+
+        assert_eq!(
+            &expected_helm_cmd,
+            res.commands.get("edge_eu_w4_deployment").unwrap()
+        );
+        assert_eq!(res.commands.len(), 1);
+    }
+
+    #[test]
+    fn filter_only_prod_deployment() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge_eu_w4_deployment = get_deployment();
+        let mut stage_eu_w4_deployment = get_deployment();
+        let mut prod_as_e1_deployment = get_deployment();
+        let mut prod_eu_w4_deployment = get_deployment();
+        let mut prod_us_c1_deployment = get_deployment();
+
+        edge_eu_w4_deployment.name = "edge_eu_w4_deployment".to_string();
+        stage_eu_w4_deployment.name = "stage_eu_w4_deployment".to_string();
+        prod_as_e1_deployment.name = "prod_as_e1_deployment".to_string();
+        prod_eu_w4_deployment.name = "prod_eu_w4_deployment".to_string();
+        prod_us_c1_deployment.name = "prod_us_c1_deployment".to_string();
+
+        cfg.deployments = vec![
+            edge_eu_w4_deployment,
+            stage_eu_w4_deployment,
+            prod_as_e1_deployment,
+            prod_eu_w4_deployment,
+            prod_us_c1_deployment,
+        ];
+
+        let mut cmd = get_cmd();
+        cmd.opts.filter = Option::from("^prod".to_string());
+
+        let res = cmd.plan(&cfg).unwrap();
+        let prod_as_e1_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_as_e1_deployment/some-release";
+        let prod_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_eu_w4_deployment/some-release";
+        let prod_us_c1_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_us_c1_deployment/some-release";
+
+        let prod_as_e1_deployment_expected_helm_cmd: Vec<String> =
+            prod_as_e1_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        let prod_eu_w4_deployment_expected_helm_cmd: Vec<String> =
+            prod_eu_w4_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        let prod_us_c1_deployment_expected_helm_cmd: Vec<String> =
+            prod_us_c1_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        assert_eq!(
+            &prod_as_e1_deployment_expected_helm_cmd,
+            res.commands.get("prod_as_e1_deployment").unwrap()
+        );
+        assert_eq!(
+            &prod_eu_w4_deployment_expected_helm_cmd,
+            res.commands.get("prod_eu_w4_deployment").unwrap()
+        );
+        assert_eq!(
+            &prod_us_c1_deployment_expected_helm_cmd,
+            res.commands.get("prod_us_c1_deployment").unwrap()
+        );
+        assert_eq!(res.commands.len(), 3);
+    }
+
+    #[test]
+    fn filter_all_eu_w4_deployment() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge_eu_w4_deployment = get_deployment();
+        let mut stage_eu_w4_deployment = get_deployment();
+        let mut prod_as_e1_deployment = get_deployment();
+        let mut prod_eu_w4_deployment = get_deployment();
+        let mut prod_us_c1_deployment = get_deployment();
+
+        edge_eu_w4_deployment.name = "edge_eu_w4_deployment".to_string();
+        stage_eu_w4_deployment.name = "stage_eu_w4_deployment".to_string();
+        prod_as_e1_deployment.name = "prod_as_e1_deployment".to_string();
+        prod_eu_w4_deployment.name = "prod_eu_w4_deployment".to_string();
+        prod_us_c1_deployment.name = "prod_us_c1_deployment".to_string();
+
+        cfg.deployments = vec![
+            edge_eu_w4_deployment,
+            stage_eu_w4_deployment,
+            prod_as_e1_deployment,
+            prod_eu_w4_deployment,
+            prod_us_c1_deployment,
+        ];
+
+        let mut cmd = get_cmd();
+        cmd.opts.filter = Option::from("eu_w4".to_string());
+
+        let res = cmd.plan(&cfg).unwrap();
+
+        let edge_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/edge_eu_w4_deployment/some-release";
+        let prod_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_eu_w4_deployment/some-release";
+        let stage_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/stage_eu_w4_deployment/some-release";
+
+        let edge_eu_w4_deployment_expected_helm_cmd: Vec<String> =
+            edge_eu_w4_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        let prod_eu_w4_deployment_expected_helm_cmd: Vec<String> =
+            prod_eu_w4_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        let stage_eu_w4_deployment_expected_helm_cmd: Vec<String> =
+            stage_eu_w4_deployment_expected_helm_cmd
+                .split_whitespace()
+                .map(String::from)
+                .collect();
+
+        assert_eq!(
+            &edge_eu_w4_deployment_expected_helm_cmd,
+            res.commands.get("edge_eu_w4_deployment").unwrap()
+        );
+        assert_eq!(
+            &prod_eu_w4_deployment_expected_helm_cmd,
+            res.commands.get("prod_eu_w4_deployment").unwrap()
+        );
+        assert_eq!(
+            &stage_eu_w4_deployment_expected_helm_cmd,
+            res.commands.get("stage_eu_w4_deployment").unwrap()
+        );
+        assert_eq!(res.commands.len(), 3);
     }
 }

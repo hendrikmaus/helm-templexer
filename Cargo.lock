@@ -372,6 +372,7 @@ dependencies = [
  "log 0.4.14",
  "predicates 1.0.8",
  "pretty_assertions",
+ "regex",
  "serde",
  "serde_any",
  "serde_json",
