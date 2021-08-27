@@ -205,7 +205,7 @@ mod tests {
     //      time to create a unit test module?
     fn get_config() -> Config {
         Config {
-            version: "v1".to_string(),
+            version: "v2".to_string(),
             helm_version: None,
             enabled: Some(true),
             chart: Default::default(),
