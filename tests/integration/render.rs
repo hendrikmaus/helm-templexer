@@ -53,7 +53,7 @@ fn render_config_example() -> anyhow::Result<()> {
 
     assert_eq!(
         contents,
-        include_str!("../../tests/data/manifests/edge-eu-w4/my-app.yaml")
+        include_str!("../../tests/data/rendered_manifests/edge-eu-w4/my-app.yaml")
     );
 
     // todo extend assertions here while changing the chart under test
