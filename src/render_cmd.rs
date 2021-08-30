@@ -1,6 +1,6 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use indexmap::map::IndexMap;
 use log::{debug, info};
 use regex::Regex;
@@ -218,14 +218,19 @@ impl RenderCmd {
                     cmd.1.join(" ")
                 );
 
-                let output_parent = cmd.0.parent().unwrap();
+                let output_parent = cmd
+                    .0
+                    .parent()
+                    .ok_or_else(|| anyhow::anyhow!("missing parent. this should never happen"))?;
+
                 if output_parent.exists() {
                     debug!("cleaning up output path: {:?}", output_parent);
                     std::fs::remove_dir_all(output_parent)?;
                 }
                 std::fs::create_dir_all(output_parent)?;
 
-                let output_file = std::fs::File::create(&cmd.0).unwrap();
+                let output_file =
+                    std::fs::File::create(&cmd.0).context("can not create output file")?;
                 let output_writer = std::io::BufWriter::new(output_file);
 
                 self.run_helm(&cmd.1.join(" "), output_writer)?;
@@ -275,7 +280,9 @@ impl RenderCmd {
             );
         }
 
-        output.write_all(result.stdout_str().as_bytes()).unwrap();
+        output
+            .write_all(result.stdout_str().as_bytes())
+            .context("can not write to output")?;
 
         Ok(())
     }
