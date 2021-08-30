@@ -30,13 +30,6 @@ struct Plan {
     /// key: deployment.name
     /// value: vector of strings containing the complete command, e.g. vec!["helm", "template", ...]
     commands: HashMap<String, (PathBuf, Vec<String>)>,
-
-    /// Fully qualified output path that will be passed to `helm template`
-    /// the output path is built as follows:
-    ///   <config.output_path>/<deployment.name>/<[config|deployment].release_name>
-    ///
-    /// key: deployment.name
-    output_path: PathBuf,
 }
 
 impl RenderCmd {
@@ -79,7 +72,6 @@ impl RenderCmd {
             skip: false,
             pre_commands: Default::default(),
             commands: Default::default(),
-            output_path: cfg.output_path,
         };
 
         if let Some(enabled) = cfg.enabled {
@@ -178,7 +170,7 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            let mut fully_qualified_output = plan.output_path.join(&d.name).join(release_name);
+            let mut fully_qualified_output = cfg.output_path.join(&d.name).join(release_name);
             fully_qualified_output.set_extension("yaml");
 
             plan.commands
