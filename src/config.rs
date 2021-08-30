@@ -68,13 +68,10 @@ impl Config {
     pub fn load<S: AsRef<Path>>(file: S) -> anyhow::Result<Config> {
         Self::check_file_exists_and_readable(file.as_ref())?;
 
-        match serde_any::from_file(file) {
-            Ok(cfg) => Ok(cfg),
-            Err(err) => Err(anyhow!(
-                "Failed to load configuration from file, because:\n{:?}",
-                err
-            )),
-        }
+        let cfg = std::fs::read_to_string(&file)?;
+        let cfg = serde_yaml::from_str::<Config>(&cfg)
+            .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+        Ok(cfg)
     }
 
     /// Validate the loaded configuration file
@@ -238,7 +235,7 @@ mod tests {
     #[test]
     fn input_file_exists() {
         // TODO feels more like an integration test, rather than a unit test
-        Config::load("tests/data/config_example.toml").unwrap();
+        Config::load("tests/data/config_example.yaml").unwrap();
     }
 
     #[test]

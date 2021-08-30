@@ -3,17 +3,16 @@
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
 ```shell
-cat > my-app.toml <<EOF
-version = "v2"
-chart = "tests/data/nginx-chart"
-release_name = "my-app"
-output_path = "manifests"
-
-[[deployments]]
-name = "edge-eu-w4"
+cat > my-app.yaml <<EOF
+version: v2
+chart: tests/data/nginx-chart
+release_name: my-app
+output_path: manifests
+deployments:
+  - name: edge
 EOF
 
-helm-templexer render my-app.toml
+helm-templexer render my-app.yaml
 ```
 
 Outcome:
@@ -21,16 +20,16 @@ Outcome:
 ```text
 ❯ exa -TL3 manifests
 manifests
-└── edge-eu-w4
+└── edge
    └── my-app
       └── nginx-chart
 ```
 
 ## Configuration
 
-Configuration can be provided as TOML, YAML or JSON - please also **see the [examples](tests/data)**.
+Configuration can be provided as YAML format.
 
-Please mind that all paths are evaluated relative to the working directory you call `helm-templexer` from.
+> All paths are evaluated relative to the configuration file during execution.
 
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
@@ -41,7 +40,7 @@ Please mind that all paths are evaluated relative to the working directory you c
 | `namespace`          | Namespace to pass on to `helm`; when omitted, no namespace is passed                                                                                                                                                                                                               |    optional   | `""`        |                                      |
 | `release_name`       | Release name to pass to `helm`                                                                                                                                                                                                                                                     |  **required** |             | `"some-release"`                     |
 | `output_path`        | Base path to use for writing the manifests to disk.<br><br>The fully-qualified output path is built as follows (`config` refers to the top-level):<br>`config.output_path/deployment.name/<[config/deployment].release_name>`                                                      |  **required** |             |                                      |
-| `additional_options` | Pass additional options to `helm template`; you can use all supported options of the tool.<br><br>Common use case: use `--set-string` to provide a container tag to use.<br>This can be achieved by modifying the configuration file in your build pipeline using toml-cli, yq, jq |    optional   | `[]`        | `["--set-string image.tag=42"]`      |
+| `additional_options` | Pass additional options to `helm template`; you can use all supported options of the tool.<br><br>Common use case: use `--set-string` to provide a container tag to use.<br>This can be achieved by modifying the configuration file in your build pipeline using mikefarah/yq |    optional   | `[]`        | `["--set-string image.tag=42"]`      |
 | `values`             | A list of base value files which are passed to each `helm template` call.<br>This is commonly used to provide a sane base config.                                                                                                                                                  |    optional   | `[]`        |                                      |
 | `deployments`        | The list of deployments to render.                                                                                                                                                                                                                                                 |  **required** |             | `[[deployments]]`<br>`name = "edge"` |
 
@@ -62,13 +61,13 @@ Use `--additional-options` to pass data to the underlying `helm template` call. 
 A common use case we found was to provide the container tag:
 
 ```shell
-helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.toml
+helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.yaml
 ```
 
 Use `--filter` to render a specific deployment. Example: To render only the `prod`, pass the regex to the filter option.
 
 ```shell
-helm-templexer render --filter="prod" my-app.toml
+helm-templexer render --filter="prod" my-app.yaml
 ```
 
 ## Installation
@@ -84,7 +83,7 @@ sudo chown -R 1001 tests/data/manifests
 
 # pull and run the image
 docker pull ghcr.io/hendrikmaus/helm-templexer
-docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data ghcr.io/hendrikmaus/helm-templexer render config_example.toml 
+docker run --rm --volume $(pwd):/srv --workdir /srv/tests/data ghcr.io/hendrikmaus/helm-templexer render config_example.yaml 
 ```
 
 Include `helm-templexer` in your `Dockerfile`:

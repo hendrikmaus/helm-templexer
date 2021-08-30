@@ -8,7 +8,7 @@ fn file_is_valid() -> anyhow::Result<()> {
 
     cmd.current_dir("tests/data")
         .arg("validate")
-        .arg("config_example.toml");
+        .arg("config_example.yaml");
 
     cmd.assert().success();
 
@@ -33,9 +33,9 @@ fn chart_does_not_exist() -> anyhow::Result<()> {
 
     cmd.current_dir("tests/data")
         .arg("validate")
-        .arg("config_chart_does_not_exist.toml");
+        .arg("config_chart_does_not_exist.yaml");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"Chart "some-non-existing-chart" does not exist or is not readable"#,
+        r#"does not exist or is not readable"#,
     ));
 
     Ok(())
@@ -47,9 +47,9 @@ fn validate_accepts_multiple_files() -> anyhow::Result<()> {
 
     cmd.current_dir("tests/data")
         .arg("validate")
-        .arg("config_example.toml")
         .arg("config_example.yaml")
-        .arg("config_example.json");
+        .arg("config_example.yaml")
+        .arg("config_example.yaml");
     cmd.assert().success();
 
     Ok(())
