@@ -29,7 +29,7 @@ manifests
 
 Configuration can be provided as YAML format.
 
-> All paths are evaluated relative to the configuration ile during execution.
+> All paths are evaluated relative to the configuration file during execution.
 
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
