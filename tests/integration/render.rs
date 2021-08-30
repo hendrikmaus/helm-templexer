@@ -36,19 +36,17 @@ fn render_config_example() -> anyhow::Result<()> {
 
     // asert that the release name override for prod-eu-e4 worked
     assert_eq!(
-        PathBuf::from("tests/data/manifests/prod-eu-w4/my-app-prod-eu-w4").exists(),
+        PathBuf::from("tests/data/manifests/prod-eu-w4/my-app-prod-eu-w4.yaml").exists(),
         true
     );
 
-    // dig deep into some of the rendered manifest files
     assert_eq!(
-        PathBuf::from("tests/data/manifests/edge-eu-w4/my-app/nginx-chart/templates").exists(),
+        PathBuf::from("tests/data/manifests/edge-eu-w4/my-app.yaml").exists(),
         true
     );
 
-    let mut edge_deployment_yaml = std::fs::File::open(
-        "tests/data/manifests/edge-eu-w4/my-app/nginx-chart/templates/deployment.yaml",
-    )?;
+    let mut edge_deployment_yaml =
+        std::fs::File::open("tests/data/manifests/edge-eu-w4/my-app.yaml").unwrap();
     let mut contents = "".to_string();
     edge_deployment_yaml.read_to_string(&mut contents)?;
     assert_eq!(contents.contains("image: \"nginx:latest\""), true);
