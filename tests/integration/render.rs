@@ -51,6 +51,11 @@ fn render_config_example() -> anyhow::Result<()> {
     edge_deployment_yaml.read_to_string(&mut contents)?;
     assert_eq!(contents.contains("image: \"nginx:latest\""), true);
 
+    assert_eq!(
+        contents,
+        include_str!("../../tests/data/manifests/edge-eu-w4/my-app.yaml")
+    );
+
     // todo extend assertions here while changing the chart under test
     // todo this test could also benefit from some utility functions/macros to make it less verbose
 

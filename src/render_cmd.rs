@@ -302,8 +302,6 @@ impl RenderCmd {
 
 #[cfg(test)]
 mod tests {
-    //TODO: Write tests for written templated data.
-
     use super::*;
     use crate::config::Deployment;
     use pretty_assertions::assert_eq;
