@@ -1,6 +1,6 @@
 use crate::config::{Config, ValidationOpts};
 use crate::RenderCmdOpts;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use indexmap::map::IndexMap;
 use log::{debug, info};
 use regex::Regex;
@@ -29,14 +29,7 @@ struct Plan {
     /// Commands to be executed on the host system
     /// key: deployment.name
     /// value: vector of strings containing the complete command, e.g. vec!["helm", "template", ...]
-    commands: HashMap<String, Vec<String>>,
-
-    /// Fully qualified output path that will be passed to `helm template`
-    /// the output path is built as follows:
-    ///   <config.output_path>/<deployment.name>/<[config|deployment].release_name>
-    ///
-    /// key: deployment.name
-    output_paths: HashMap<String, PathBuf>,
+    commands: HashMap<String, (PathBuf, Vec<String>)>,
 }
 
 impl RenderCmd {
@@ -60,7 +53,7 @@ impl RenderCmd {
             };
             cfg.validate(&opts)?;
 
-            let plan = self.plan(&cfg)?;
+            let plan = self.plan(cfg)?;
 
             if plan.skip {
                 info!("config is disabled (skipped)");
@@ -74,12 +67,11 @@ impl RenderCmd {
     }
 
     /// Create a plan of commands to execute
-    fn plan(&self, cfg: &Config) -> anyhow::Result<Plan> {
+    fn plan(&self, cfg: Config) -> anyhow::Result<Plan> {
         let mut plan = Plan {
             skip: false,
             pre_commands: Default::default(),
             commands: Default::default(),
-            output_paths: Default::default(),
         };
 
         if let Some(enabled) = cfg.enabled {
@@ -94,14 +86,6 @@ impl RenderCmd {
             None => bail!(
                 "failed to convert given chart path {:?} to string",
                 cfg.chart
-            ),
-        };
-
-        let output_dir = match cfg.output_path.to_str() {
-            Some(s) => s,
-            None => bail!(
-                "failed to convert given output_path {:?} to string",
-                cfg.output_path
             ),
         };
 
@@ -129,16 +113,14 @@ impl RenderCmd {
             chart.to_string(),
         ];
 
-        match &cfg.namespace {
-            Some(namespace) => base_cmd.push(format!("--namespace={}", namespace)),
-            None => (),
+        if let Some(namespace) = cfg.namespace {
+            base_cmd.push(format!("--namespace={}", namespace))
         }
 
         base_cmd.extend(values);
 
-        match &cfg.additional_options {
-            Some(opts) => base_cmd.extend(opts.clone()),
-            None => (),
+        if let Some(opts) = cfg.additional_options {
+            base_cmd.extend(opts);
         }
 
         match &self.opts.additional_options {
@@ -146,7 +128,7 @@ impl RenderCmd {
             None => (),
         }
 
-        for d in &cfg.deployments {
+        for d in cfg.deployments {
             if self.opts.filter.is_some()
                 && !self.is_name_filtered(
                     self.opts
@@ -188,12 +170,11 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            let fully_qualified_output_dir = format!("{}/{}/{}", output_dir, d.name, release_name);
-            cmd.push(format!("--output-dir={}", fully_qualified_output_dir));
+            let mut fully_qualified_output = cfg.output_path.join(&d.name).join(release_name);
+            fully_qualified_output.set_extension("yaml");
 
-            plan.commands.insert(d.name.to_owned(), cmd);
-            plan.output_paths
-                .insert(d.name.clone(), PathBuf::from(fully_qualified_output_dir));
+            plan.commands
+                .insert(d.name.to_owned(), (fully_qualified_output, cmd));
         }
 
         Ok(plan)
@@ -213,7 +194,7 @@ impl RenderCmd {
                     cmd.join(" ")
                 );
 
-                self.run_helm(&cmd.join(" "))?;
+                self.run_helm(&cmd.join(" "), std::io::sink())?;
             }
         }
 
@@ -226,21 +207,25 @@ impl RenderCmd {
                 debug!(
                     "executing planned command for deployment {}:\n \t {:#?}",
                     deployment,
-                    cmd.join(" ")
+                    cmd.1.join(" ")
                 );
 
-                match &plan.output_paths.get(deployment) {
-                    Some(p) => {
-                        debug!("cleaning up output path: {:?}", p);
-                        if p.exists() {
-                            std::fs::remove_dir_all(p)?;
-                        }
-                        std::fs::create_dir_all(p)?;
-                    }
-                    None => (),
-                }
+                let output_parent = cmd
+                    .0
+                    .parent()
+                    .ok_or_else(|| anyhow::anyhow!("missing parent. this should never happen"))?;
 
-                self.run_helm(&cmd.join(" "))?;
+                if output_parent.exists() {
+                    debug!("cleaning up output path: {:?}", output_parent);
+                    std::fs::remove_dir_all(output_parent)?;
+                }
+                std::fs::create_dir_all(output_parent)?;
+
+                let output_file =
+                    std::fs::File::create(&cmd.0).context("can not create output file")?;
+                let output_writer = std::io::BufWriter::new(output_file);
+
+                self.run_helm(&cmd.1.join(" "), output_writer)?;
             }
         }
 
@@ -252,7 +237,7 @@ impl RenderCmd {
     /// With special result handling as `helm` could exit 0 while logging `exit status 1`.
     /// It is unclear if the issue is actually resolved, see
     /// https://github.com/helm/helm/issues/8268
-    fn run_helm(&self, cmd: &str) -> anyhow::Result<()> {
+    fn run_helm(&self, cmd: &str, mut output: impl std::io::Write) -> anyhow::Result<()> {
         // `helm` logs that it wanted to exit 1 but actually exits 0:
         //
         //   ❯ helm version --client
@@ -286,6 +271,10 @@ impl RenderCmd {
                 result.stdout_str()
             );
         }
+
+        output
+            .write_all(result.stdout_str().as_bytes())
+            .context("can not write to output")?;
 
         Ok(())
     }
@@ -366,7 +355,7 @@ mod tests {
         cfg.enabled = Option::from(false);
         let cmd = get_cmd();
 
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
         assert_eq!(true, res.skip);
     }
 
@@ -388,16 +377,17 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
-            --values=some-base.yaml --no-hooks --debug --values=edge.yaml --set=env=edge \
-            --output-dir=manifests/edge/some-release";
+            --values=some-base.yaml --no-hooks --debug --values=edge.yaml --set=env=edge";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
             .collect();
 
-        assert_eq!(&expected_helm_cmd, res.commands.get("edge").unwrap());
+        let got = res.commands.get("edge").unwrap();
+
+        assert_eq!(expected_helm_cmd, got.1)
     }
 
     #[test]
@@ -413,7 +403,7 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
         assert_eq!(None, res.commands.get("edge"));
     }
 
@@ -430,15 +420,16 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(&cfg).unwrap();
-        let expected_helm_cmd = "helm template edge-release charts/some-chart \
-            --output-dir=manifests/edge/edge-release";
+        let res = cmd.plan(cfg).unwrap();
+        let expected_helm_cmd = "helm template edge-release charts/some-chart";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
             .collect();
 
-        assert_eq!(&expected_helm_cmd, res.commands.get("edge").unwrap());
+        let got = res.commands.get("edge").unwrap();
+
+        assert_eq!(expected_helm_cmd, got.1);
     }
 
     #[test]
@@ -460,16 +451,17 @@ mod tests {
         cmd.opts.additional_options =
             Option::from(vec!["--set-string=image.tag=424242a".to_string()]);
 
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
-            --values=some-base.yaml --no-hooks --debug --set-string=image.tag=424242a \
-            --output-dir=manifests/edge/some-release";
+            --values=some-base.yaml --no-hooks --debug --set-string=image.tag=424242a";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
             .collect();
 
-        assert_eq!(&expected_helm_cmd, res.commands.get("edge").unwrap());
+        let got = res.commands.get("edge").unwrap();
+
+        assert_eq!(expected_helm_cmd, got.1);
     }
 
     #[test]
@@ -485,7 +477,7 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.update_dependencies = true;
 
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
         let expected_helm_cmd = "helm dependencies update charts/some-chart";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
@@ -529,17 +521,15 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("edge".to_string());
 
-        let res = cmd.plan(&cfg).unwrap();
-        let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/edge_eu_w4_deployment/some-release";
+        let res = cmd.plan(cfg).unwrap();
+        let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
             .map(String::from)
             .collect();
+        let got = res.commands.get("edge_eu_w4_deployment").unwrap();
 
-        assert_eq!(
-            &expected_helm_cmd,
-            res.commands.get("edge_eu_w4_deployment").unwrap()
-        );
+        assert_eq!(expected_helm_cmd, got.1);
         assert_eq!(res.commands.len(), 1);
     }
 
@@ -574,10 +564,13 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("^prod".to_string());
 
-        let res = cmd.plan(&cfg).unwrap();
-        let prod_as_e1_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_as_e1_deployment/some-release";
-        let prod_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_eu_w4_deployment/some-release";
-        let prod_us_c1_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_us_c1_deployment/some-release";
+        let res = cmd.plan(cfg).unwrap();
+        let prod_as_e1_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
+        let prod_eu_w4_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
+        let prod_us_c1_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
 
         let prod_as_e1_deployment_expected_helm_cmd: Vec<String> =
             prod_as_e1_deployment_expected_helm_cmd
@@ -597,18 +590,13 @@ mod tests {
                 .map(String::from)
                 .collect();
 
-        assert_eq!(
-            &prod_as_e1_deployment_expected_helm_cmd,
-            res.commands.get("prod_as_e1_deployment").unwrap()
-        );
-        assert_eq!(
-            &prod_eu_w4_deployment_expected_helm_cmd,
-            res.commands.get("prod_eu_w4_deployment").unwrap()
-        );
-        assert_eq!(
-            &prod_us_c1_deployment_expected_helm_cmd,
-            res.commands.get("prod_us_c1_deployment").unwrap()
-        );
+        let got_as_e1 = res.commands.get("prod_as_e1_deployment").unwrap();
+        let got_eu_w4 = res.commands.get("prod_eu_w4_deployment").unwrap();
+        let got_us_c1 = res.commands.get("prod_us_c1_deployment").unwrap();
+
+        assert_eq!(prod_as_e1_deployment_expected_helm_cmd, got_as_e1.1);
+        assert_eq!(prod_eu_w4_deployment_expected_helm_cmd, got_eu_w4.1);
+        assert_eq!(prod_us_c1_deployment_expected_helm_cmd, got_us_c1.1);
         assert_eq!(res.commands.len(), 3);
     }
 
@@ -643,11 +631,14 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("eu_w4".to_string());
 
-        let res = cmd.plan(&cfg).unwrap();
+        let res = cmd.plan(cfg).unwrap();
 
-        let edge_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/edge_eu_w4_deployment/some-release";
-        let prod_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/prod_eu_w4_deployment/some-release";
-        let stage_eu_w4_deployment_expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default --output-dir=manifests/stage_eu_w4_deployment/some-release";
+        let edge_eu_w4_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
+        let prod_eu_w4_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
+        let stage_eu_w4_deployment_expected_helm_cmd =
+            "helm template some-release charts/some-chart --namespace=default";
 
         let edge_eu_w4_deployment_expected_helm_cmd: Vec<String> =
             edge_eu_w4_deployment_expected_helm_cmd
@@ -667,18 +658,13 @@ mod tests {
                 .map(String::from)
                 .collect();
 
-        assert_eq!(
-            &edge_eu_w4_deployment_expected_helm_cmd,
-            res.commands.get("edge_eu_w4_deployment").unwrap()
-        );
-        assert_eq!(
-            &prod_eu_w4_deployment_expected_helm_cmd,
-            res.commands.get("prod_eu_w4_deployment").unwrap()
-        );
-        assert_eq!(
-            &stage_eu_w4_deployment_expected_helm_cmd,
-            res.commands.get("stage_eu_w4_deployment").unwrap()
-        );
+        let got_edge = res.commands.get("edge_eu_w4_deployment").unwrap();
+        let got_stage = res.commands.get("stage_eu_w4_deployment").unwrap();
+        let got_prod = res.commands.get("prod_eu_w4_deployment").unwrap();
+
+        assert_eq!(edge_eu_w4_deployment_expected_helm_cmd, got_edge.1);
+        assert_eq!(prod_eu_w4_deployment_expected_helm_cmd, got_prod.1);
+        assert_eq!(stage_eu_w4_deployment_expected_helm_cmd, got_stage.1);
         assert_eq!(res.commands.len(), 3);
     }
 }

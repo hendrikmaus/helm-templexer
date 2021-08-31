@@ -24,7 +24,7 @@ pub struct Config {
     /// Release name passed to `helm template` call
     pub release_name: String,
 
-    /// Output path to write manifests to; passed via `--output-dir`
+    /// Output path to write manifests to
     pub output_path: PathBuf,
 
     /// Use any other option that `helm template` supports
