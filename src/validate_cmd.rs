@@ -24,7 +24,11 @@ impl ValidateCmd {
                 ..Default::default()
             };
 
-            Config::load(&file)?.validate(&opts)?;
+            let cfg = Config::load(file)?;
+            cfg.clone()
+                .switch_working_directory(file)?
+                .validate(&opts)?
+                .reset_working_directory()?;
         }
 
         Ok(())

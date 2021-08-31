@@ -46,14 +46,14 @@ impl RenderCmd {
         for file in &self.opts.input_files {
             info!("processing {:?}", file);
 
-            let cfg = Config::load(&file)?;
             let opts = ValidationOpts {
                 config_file: Some(file.clone()),
                 ..Default::default()
             };
-            cfg.validate(&opts)?;
+            let cfg = Config::load(&file)?;
+            cfg.switch_working_directory(file)?.validate(&opts)?;
 
-            let plan = self.plan(cfg)?;
+            let plan = self.plan(cfg.clone())?;
 
             if plan.skip {
                 info!("config is disabled (skipped)");
@@ -61,6 +61,8 @@ impl RenderCmd {
             }
 
             self.exec_plan(&plan)?;
+
+            cfg.reset_working_directory()?;
         }
 
         Ok(())
@@ -324,6 +326,7 @@ mod tests {
             additional_options: None,
             values: None,
             deployments: vec![],
+            original_working_directory: Default::default(),
         }
     }
 
