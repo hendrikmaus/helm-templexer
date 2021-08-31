@@ -54,10 +54,6 @@ pub struct RenderCmdOpts {
     /// Configuration file(s) to render deployments for (supported format: yaml)
     input_files: Vec<PathBuf>,
 
-    /// (not implemented) Optional helm binary to use; defaults to the binary found in the PATH or fails, if none is found
-    #[structopt(short, long)]
-    helm_bin: Option<PathBuf>,
-
     /// Pass additional options to the underlying 'helm template' call, e.g. '--set-string image.tag=${revision}'
     #[structopt(short, long, multiple = true)]
     additional_options: Option<Vec<String>>,
