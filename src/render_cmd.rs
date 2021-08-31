@@ -333,7 +333,6 @@ mod tests {
         RenderCmd {
             opts: RenderCmdOpts {
                 input_files: vec![],
-                helm_bin: None,
                 additional_options: None,
                 update_dependencies: false,
                 filter: None,
