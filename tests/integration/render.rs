@@ -36,24 +36,24 @@ fn render_config_example() -> anyhow::Result<()> {
 
     // asert that the release name override for prod-eu-e4 worked
     assert_eq!(
-        PathBuf::from("tests/data/manifests/prod-eu-w4/my-app-prod-eu-w4.yaml").exists(),
+        PathBuf::from("tests/data/manifests/prod-eu-w4/my-app-prod-eu-w4/manifest.yaml").exists(),
         true
     );
 
     assert_eq!(
-        PathBuf::from("tests/data/manifests/edge-eu-w4/my-app.yaml").exists(),
+        PathBuf::from("tests/data/manifests/edge-eu-w4/my-app/manifest.yaml").exists(),
         true
     );
 
     let mut edge_deployment_yaml =
-        std::fs::File::open("tests/data/manifests/edge-eu-w4/my-app.yaml").unwrap();
+        std::fs::File::open("tests/data/manifests/edge-eu-w4/my-app/manifest.yaml").unwrap();
     let mut contents = "".to_string();
     edge_deployment_yaml.read_to_string(&mut contents)?;
     assert_eq!(contents.contains("image: \"nginx:latest\""), true);
 
     assert_eq!(
         contents,
-        include_str!("../../tests/data/rendered_manifests/edge-eu-w4/my-app.yaml")
+        include_str!("../../tests/data/rendered_manifests/edge-eu-w4/my-app/manifest.yaml")
     );
 
     // todo extend assertions here while changing the chart under test

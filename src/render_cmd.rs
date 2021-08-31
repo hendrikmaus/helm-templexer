@@ -170,7 +170,11 @@ impl RenderCmd {
             }
             cmd[2] = release_name.to_owned();
 
-            let mut fully_qualified_output = cfg.output_path.join(&d.name).join(release_name);
+            let mut fully_qualified_output = cfg
+                .output_path
+                .join(&d.name)
+                .join(release_name)
+                .join("manifest");
             fully_qualified_output.set_extension("yaml");
 
             plan.commands
