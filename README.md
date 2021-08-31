@@ -18,7 +18,7 @@ helm-templexer render my-app.yaml
 Outcome:
 
 ```text
-❯ exa -TL3 manifests
+❯ exa -T manifests
 manifests
 └── edge
    └── my-app
@@ -56,6 +56,8 @@ Deployments can override several top-level fields:
 
 ## Additional Options to The Render Command
 
+### Extending The `helm template` Call
+
 Use `--additional-options` to pass data to the underlying `helm template` call. Beware that these additional options get added to *every* call, i.e. to each deployment.
 
 A common use case we found was to provide the container tag:
@@ -64,10 +66,20 @@ A common use case we found was to provide the container tag:
 helm-templexer render --additional-options="--set-string image.tag=${revision}" my-app.yaml
 ```
 
+### Render a Subset of Deployments
+
 Use `--filter` to render a specific deployment. Example: To render only the `prod`, pass the regex to the filter option.
 
 ```shell
 helm-templexer render --filter="prod" my-app.yaml
+```
+
+### Update Helm Dependencies Before Rendering
+
+Use `--update-dependencies` to run `helm dependencies update` *once* before starting to render the deployments.
+
+```shell
+helm-templexer render --update-dependencies my-app.yaml
 ```
 
 ## Installation
