@@ -675,4 +675,37 @@ mod tests {
         assert_eq!(stage_eu_w4_deployment_expected_helm_cmd, got_stage.1);
         assert_eq!(res.commands.len(), 3);
     }
+
+    #[test]
+    fn pipe_output_through_tool() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge = get_deployment();
+        edge.name = "edge".to_string();
+
+        cfg.deployments = vec![edge];
+
+        let mut cmd = get_cmd();
+        let pipe_command = vec!["grep images".to_string()];
+
+        cmd.opts.pipe = Option::from(pipe_command);
+
+        let res = cmd.plan(cfg).unwrap();
+
+        let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
+
+        let mut edge_expected_helm_cmd: Vec<String> =
+            base_helm_cmd.split_whitespace().map(String::from).collect();
+
+        edge_expected_helm_cmd.push("| grep images".to_owned());
+
+        let got_edge = res.commands.get("edge").unwrap();
+
+        assert_eq!(edge_expected_helm_cmd, got_edge.1);
+        assert_eq!(res.commands.len(), 1);
+    }
 }
