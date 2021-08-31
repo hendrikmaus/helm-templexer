@@ -21,8 +21,7 @@ Outcome:
 ❯ exa -TL3 manifests
 manifests
 └── edge
-   └── my-app
-      └── nginx-chart
+   └── my-app.yaml
 ```
 
 ## Configuration
@@ -39,7 +38,7 @@ Configuration can be provided as YAML format.
 | `chart`              | Path to the chart to render                                                                                                                                                                                                                                                        |  **required** |             | `"path/to/some-chart"`               |
 | `namespace`          | Namespace to pass on to `helm`; when omitted, no namespace is passed                                                                                                                                                                                                               |    optional   | `""`        |                                      |
 | `release_name`       | Release name to pass to `helm`                                                                                                                                                                                                                                                     |  **required** |             | `"some-release"`                     |
-| `output_path`        | Base path to use for writing the manifests to disk.<br><br>The fully-qualified output path is built as follows (`config` refers to the top-level):<br>`config.output_path/deployment.name/<[config/deployment].release_name>`                                                      |  **required** |             |                                      |
+| `output_path`        | Base path to use for writing the manifests to disk.<br><br>The fully-qualified output path is built as follows (`config` refers to the top-level):<br>`config.output_path/deployment.name/<[config/deployment].release_name>.yaml`                                                      |  **required** |             |                                      |
 | `additional_options` | Pass additional options to `helm template`; you can use all supported options of the tool.<br><br>Common use case: use `--set-string` to provide a container tag to use.<br>This can be achieved by modifying the configuration file in your build pipeline using mikefarah/yq |    optional   | `[]`        | `["--set-string image.tag=42"]`      |
 | `values`             | A list of base value files which are passed to each `helm template` call.<br>This is commonly used to provide a sane base config.                                                                                                                                                  |    optional   | `[]`        |                                      |
 | `deployments`        | The list of deployments to render.                                                                                                                                                                                                                                                 |  **required** |             | `[[deployments]]`<br>`name = "edge"` |
