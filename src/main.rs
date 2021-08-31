@@ -65,6 +65,10 @@ pub struct RenderCmdOpts {
     /// Pass a regular expression to this flag to render only selected deployment(s). eg: to render only edge 'helm-templexer render --filter edge my-app.yaml'
     #[structopt(short, long)]
     filter: Option<String>,
+
+    /// Pass a command to pipe the manifest through before writing to disk, eg: 'helm-templexer render --pipe kbld my-app.yaml'
+    #[structopt(short, long, multiple = true)]
+    pipe: Option<Vec<String>>,
 }
 
 fn main() -> anyhow::Result<()> {

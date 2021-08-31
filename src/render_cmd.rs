@@ -177,6 +177,11 @@ impl RenderCmd {
                 .join("manifest");
             fully_qualified_output.set_extension("yaml");
 
+            if let Some(opts) = &self.opts.pipe {
+                let pipe_command: Vec<String> = opts.iter().map(|p| format!("| {}", p)).collect();
+                cmd.extend(pipe_command)
+            }
+
             plan.commands
                 .insert(d.name.to_owned(), (fully_qualified_output, cmd));
         }
@@ -198,7 +203,7 @@ impl RenderCmd {
                     cmd.join(" ")
                 );
 
-                self.run_helm(&cmd.join(" "), std::io::sink())?;
+                self.run_helm(&cmd.join(" "), &std::io::sink())?;
             }
         }
 
@@ -260,7 +265,6 @@ impl RenderCmd {
         //
         // The issue is reported and open https://github.com/helm/helm/issues/8268
         //   as of 2020-07-26
-
         let result = Exec::shell(cmd)
             .stdout(Redirection::Pipe)
             .stderr(Redirection::Merge)
@@ -336,6 +340,7 @@ mod tests {
                 additional_options: None,
                 update_dependencies: false,
                 filter: None,
+                pipe: None,
             },
         }
     }
