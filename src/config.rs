@@ -84,7 +84,7 @@ impl Config {
 
     /// Change the working directory to the place where the config file is, so that all
     /// paths are relative to the config file instead of the location where the templexer is called from
-    pub fn switch_working_directory(&self, config_file: &PathBuf) -> anyhow::Result<&Self> {
+    pub fn switch_working_directory(&self, config_file: &Path) -> anyhow::Result<&Self> {
         let base_path = config_file.canonicalize()?;
         log::trace!(
             "absolute path of {:?} discovered as {:?}",
