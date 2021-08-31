@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::path::Path;
 use std::path::PathBuf;
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     /// Schema version to use
     pub version: String,
@@ -44,7 +44,7 @@ pub struct Config {
     pub original_working_directory: PathBuf,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Deployment {
     /// Name of the deployment, used to create the output path
     pub name: String,
