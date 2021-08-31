@@ -75,7 +75,7 @@ helm-templexer render --filter="prod" my-app.yaml
 
 ### Update Helm Dependencies Before Rendering
 
-Use `--update-dependencies` to run `helm dependencies update` *once* before starting to render the deployment.
+Use `--update-dependencies` to run `helm dependencies update` *once* before starting to render the deployments.
 
 ```shell
 helm-templexer render --update-dependencies my-app.yaml
