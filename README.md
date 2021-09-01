@@ -82,6 +82,17 @@ Use `--update-dependencies` to run `helm dependencies update` *once* before star
 helm-templexer render --update-dependencies my-app.yaml
 ```
 
+### Pipe Manifest Output Through Tool(s) Before Writing to File
+
+Use `--pipe` to pass the manifest output through a tool or set of tools before writing to a file.
+
+```shell
+helm-templexer render --pipe="grep kind" my-app.yaml
+```
+```shell
+helm-templexer render --pipe="grep kind" --pipe="kbld -f manifest.yaml" my-app.yaml
+```
+
 ## Installation
 
 ### Docker
