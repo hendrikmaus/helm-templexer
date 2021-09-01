@@ -203,7 +203,7 @@ impl RenderCmd {
                     cmd.join(" ")
                 );
 
-                self.run_helm(&cmd.join(" "), &std::io::sink())?;
+                self.run_helm(&cmd.join(" "), std::io::sink())?;
             }
         }
 
