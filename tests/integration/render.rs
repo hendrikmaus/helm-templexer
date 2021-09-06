@@ -156,7 +156,7 @@ fn render_config_example() -> anyhow::Result<()> {
 fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    let config = generate_config().unwrap();
+    let config = generate_config()?;
 
     cmd.arg("render").arg("--pipe=grep 'image'").arg(&config);
 
