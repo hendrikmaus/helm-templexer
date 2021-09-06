@@ -66,7 +66,7 @@ pub struct RenderCmdOpts {
     #[structopt(short, long)]
     filter: Option<String>,
 
-    /// Pass one or multiple command(s) to pipe the manifest for each deployment through before writing to disk, eg: 'helm-templexer render --pipe="kbld" my-app.yaml'
+    /// Pass one or multiple command(s) to pipe the manifest for each deployment through before writing to disk, eg: 'helm-templexer render --pipe="kbld -f -" my-app.yaml'
     #[structopt(short, long, multiple = true)]
     pipe: Option<Vec<String>>,
 }
