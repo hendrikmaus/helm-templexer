@@ -72,7 +72,7 @@ fn drop_temp_folders(dir: &str) -> Result<String, io::Error> {
 fn render_config_example() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    let config = generate_config().unwrap();
+    let config = generate_config()?;
 
     cmd.arg("render").arg(&config);
 
