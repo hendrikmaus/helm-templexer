@@ -65,7 +65,7 @@ deployments:
 
 fn drop_temp_folders(dir: &str) -> Result<String, io::Error> {
     // delete the tmp folder
-    Ok(run_fun!(rm -r $dir).unwrap())
+    Ok(run_fun!(rm -r $dir)?)
 }
 
 #[test]
