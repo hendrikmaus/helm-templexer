@@ -63,7 +63,7 @@ deployments:
     Ok(PathBuf::from(path))
 }
 
-fn drop_temp_folders(dir: &str) -> Result<String, io::Error> {
+fn drop_temp_folder(dir: &str) -> Result<String, io::Error> {
     Ok(run_fun!(rm -r $dir)?)
 }
 
@@ -146,7 +146,7 @@ fn render_config_example() -> anyhow::Result<()> {
     // // todo this test could also benefit from some utility functions/macros to make it less verbose
 
     // delete temp folder
-    drop_temp_folders(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
+    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
 }
@@ -173,14 +173,12 @@ fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
 
     // assert that the output contains only images related content
     assert_eq!(
-        contents.contains(
-            "          image: \"nginx:latest\"\n          imagePullPolicy: IfNotPresent\n"
-        ),
-        true
+        contents.trim_start(),
+        "image: \"nginx:latest\"\n          imagePullPolicy: IfNotPresent\n"
     );
 
     // delete temp folder
-    drop_temp_folders(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
+    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
 }
@@ -209,13 +207,10 @@ fn pipe_output_to_multiple_tools() -> anyhow::Result<()> {
     yaml.read_to_string(&mut contents)?;
 
     // assert that the output contains only imagePullPolicy related content
-    assert_eq!(
-        contents.contains("          imagePullPolicy: IfNotPresent\n"),
-        true
-    );
+    assert_eq!(contents.trim_start(), "imagePullPolicy: IfNotPresent\n");
 
     // delete temp folder
-    drop_temp_folders(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
+    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
 }
@@ -232,7 +227,7 @@ fn pipe_output_to_a_tool_that_doesnt_exist() -> anyhow::Result<()> {
     cmd.assert().failure();
 
     // delete temp folder
-    drop_temp_folders(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
+    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
 }
