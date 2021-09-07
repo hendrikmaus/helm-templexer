@@ -267,7 +267,7 @@ impl RenderCmd {
         //   as of 2020-07-26
         let result = Exec::shell(cmd)
             .stdout(Redirection::Pipe)
-            .stderr(Redirection::Merge)
+            .stderr(Redirection::Pipe)
             .capture()?;
 
         debug!("helm output:\n{}", result.stdout_str());
