@@ -87,10 +87,10 @@ helm-templexer render --update-dependencies my-app.yaml
 Use `--pipe` to pass the manifest output through a tool or set of tools before writing to a file.
 
 ```shell
-helm-templexer render --pipe="grep kind" my-app.yaml
+helm-templexer render --pipe="kbld -f -" my-app.yaml
 ```
 ```shell
-helm-templexer render --pipe="grep kind" --pipe="kbld -f manifest.yaml" my-app.yaml
+helm-templexer render --pipe="kbld -f -" --pipe="tee /dev/stdout" my-app.yaml
 ```
 
 ## Installation
