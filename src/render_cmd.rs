@@ -698,7 +698,7 @@ mod tests {
 
         cmd.opts.pipe = Option::from(pipe_command);
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
 
         let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
 
@@ -731,7 +731,7 @@ mod tests {
 
         cmd.opts.pipe = Option::from(pipe_command);
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
 
         let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
 
