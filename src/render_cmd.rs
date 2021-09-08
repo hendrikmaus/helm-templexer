@@ -179,6 +179,11 @@ impl RenderCmd {
                 .join("manifest");
             fully_qualified_output.set_extension("yaml");
 
+            if let Some(opts) = &self.opts.pipe {
+                let pipe_command: Vec<String> = opts.iter().map(|p| format!("| {}", p)).collect();
+                cmd.extend(pipe_command)
+            }
+
             plan.commands
                 .insert(d.name.to_owned(), (fully_qualified_output, cmd));
         }
@@ -262,13 +267,13 @@ impl RenderCmd {
         //
         // The issue is reported and open https://github.com/helm/helm/issues/8268
         //   as of 2020-07-26
-
         let result = Exec::shell(cmd)
             .stdout(Redirection::Pipe)
-            .stderr(Redirection::Merge)
+            .stderr(Redirection::Pipe)
             .capture()?;
 
         debug!("helm output:\n{}", result.stdout_str());
+        debug!("standard error:\n{}", result.stderr_str());
 
         if !result.exit_status.success() || result.stdout_str().contains("exit status 1") {
             bail!(
@@ -339,6 +344,7 @@ mod tests {
                 additional_options: None,
                 update_dependencies: false,
                 filter: None,
+                pipe: None,
             },
         }
     }
@@ -672,5 +678,72 @@ mod tests {
         assert_eq!(prod_eu_w4_deployment_expected_helm_cmd, got_prod.1);
         assert_eq!(stage_eu_w4_deployment_expected_helm_cmd, got_stage.1);
         assert_eq!(res.commands.len(), 3);
+    }
+
+    #[test]
+    fn pipe_output_through_tool() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge = get_deployment();
+        edge.name = "edge".to_string();
+
+        cfg.deployments = vec![edge];
+
+        let mut cmd = get_cmd();
+        let pipe_command = vec!["grep images".to_string()];
+
+        cmd.opts.pipe = Option::from(pipe_command);
+
+        let res = cmd.plan(cfg).unwrap();
+
+        let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
+
+        let mut edge_expected_helm_cmd: Vec<String> =
+            base_helm_cmd.split_whitespace().map(String::from).collect();
+
+        edge_expected_helm_cmd.push("| grep images".to_owned());
+
+        let got_edge = res.commands.get("edge").unwrap();
+
+        assert_eq!(edge_expected_helm_cmd, got_edge.1);
+        assert_eq!(res.commands.len(), 1);
+    }
+
+    #[test]
+    fn pipe_multiple_output_through_tool() {
+        let mut cfg = get_config();
+        cfg.chart = PathBuf::from("charts/some-chart");
+        cfg.namespace = Option::from("default".to_string());
+        cfg.release_name = "some-release".to_string();
+        cfg.output_path = PathBuf::from("manifests");
+
+        let mut edge = get_deployment();
+        edge.name = "edge".to_string();
+
+        cfg.deployments = vec![edge];
+
+        let mut cmd = get_cmd();
+        let pipe_command = vec!["grep images".to_string(), "kbld -f manifest".to_string()];
+
+        cmd.opts.pipe = Option::from(pipe_command);
+
+        let res = cmd.plan(cfg).unwrap();
+
+        let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
+
+        let mut edge_expected_helm_cmd: Vec<String> =
+            base_helm_cmd.split_whitespace().map(String::from).collect();
+
+        edge_expected_helm_cmd.push("| grep images".to_owned());
+        edge_expected_helm_cmd.push("| kbld -f manifest".to_owned());
+
+        let got_edge = res.commands.get("edge").unwrap();
+
+        assert_eq!(edge_expected_helm_cmd, got_edge.1);
+        assert_eq!(res.commands.len(), 1);
     }
 }
