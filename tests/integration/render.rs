@@ -8,8 +8,9 @@ use std::process::Command;
 
 const BIN_NAME: &'static str = env!("CARGO_PKG_NAME");
 
+/// Generate a dummy configuration and dump it to a temporary location on disk
+/// this should be called at the beginning of each test case and concluded with calling `drop_temp_folder`.
 fn generate_config() -> Result<PathBuf, io::Error> {
-    // Generate the Config in string literal
     let config = r#"---
 version: v2
 enabled: true
@@ -43,12 +44,8 @@ deployments:
       - ../nginx-chart/values/prod-eu-w4.yaml
 "#;
 
-    // Create a temp folder
-    let config_folder = run_fun!(mktemp -d "tests/data"/configXXXX)?;
-
+    let config_folder = run_fun!(mktemp -d "tests/data"/test_config_XXXX)?;
     let path = format!("{}/config.yaml", config_folder);
-
-    // Create a config file and put it in the config folder
     let mut tmp_file = OpenOptions::new()
         .write(true)
         .read(true)
@@ -56,13 +53,12 @@ deployments:
         .open(&path)
         .unwrap();
 
-    // Write the generated string literal to a file in the temp folder
     writeln!(tmp_file, "{}", config)?;
 
-    // return the entire folder
     Ok(PathBuf::from(path))
 }
 
+/// Drop temporary folder; use at the end of each test case
 fn drop_temp_folder(dir: &str) -> Result<String, io::Error> {
     Ok(run_fun!(rm -r $dir)?)
 }
@@ -108,7 +104,7 @@ fn render_config_example() -> anyhow::Result<()> {
     assert_eq!(PathBuf::from(prod_manifest_folder).exists(), true);
     assert_eq!(PathBuf::from(next_edge_manifest_folder).exists(), false);
 
-    // // asert that the release name override for prod-eu-e4 worked
+    // asert that the release name override for prod-eu-e4 worked
     assert_eq!(
         PathBuf::from(format!(
             "{}/prod-eu-w4/my-app-prod-eu-w4/manifest.yaml",
@@ -145,7 +141,6 @@ fn render_config_example() -> anyhow::Result<()> {
     // // todo extend assertions here while changing the chart under test
     // // todo this test could also benefit from some utility functions/macros to make it less verbose
 
-    // delete temp folder
     drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
@@ -177,7 +172,6 @@ fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
         "image: \"nginx:latest\"\n          imagePullPolicy: IfNotPresent\n"
     );
 
-    // delete temp folder
     drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
@@ -209,7 +203,6 @@ fn pipe_output_to_multiple_tools() -> anyhow::Result<()> {
     // assert that the output contains only imagePullPolicy related content
     assert_eq!(contents.trim_start(), "imagePullPolicy: IfNotPresent\n");
 
-    // delete temp folder
     drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())
@@ -226,7 +219,6 @@ fn pipe_output_to_a_tool_that_doesnt_exist() -> anyhow::Result<()> {
     // the binary execution should fail because xyz tool doesn't exist.
     cmd.assert().failure();
 
-    // delete temp folder
     drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
 
     Ok(())

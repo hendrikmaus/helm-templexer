@@ -86,12 +86,19 @@ helm-templexer render --update-dependencies my-app.yaml
 
 Use `--pipe` to pass the manifest output through a tool or set of tools before writing to a file.
 
+Please mind that this option **requires** an equal sign (`=`), i.e. `--pipe="<command>".
+
 ```shell
 helm-templexer render --pipe="kbld -f -" my-app.yaml
 ```
+
+You can define the argument multiple times; the commands will be added in order of appearance to the final command.
+
 ```shell
 helm-templexer render --pipe="kbld -f -" --pipe="tee /dev/stdout" my-app.yaml
 ```
+
+If anything unexpected happens, you can use `-v`, `-vv` and `-vvv` to increase the log level and see the underlying command.
 
 ## Installation
 
@@ -101,7 +108,7 @@ helm-templexer render --pipe="kbld -f -" --pipe="tee /dev/stdout" my-app.yaml
 # create the directory where helm-templexer will render to
 mkdir -p tests/data/manifests
 
-# let helm-templexers user id (1001) own the directory
+# let helm-templexer's user id (1001) own the directory
 sudo chown -R 1001 tests/data/manifests
 
 # pull and run the image

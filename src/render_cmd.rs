@@ -272,8 +272,8 @@ impl RenderCmd {
             .stderr(Redirection::Pipe)
             .capture()?;
 
-        debug!("helm output:\n{}", result.stdout_str());
-        debug!("standard error:\n{}", result.stderr_str());
+        debug!("stdout:\n{}", result.stdout_str());
+        debug!("stderr:\n{}", result.stderr_str());
 
         if !result.exit_status.success() || result.stdout_str().contains("exit status 1") {
             bail!(
