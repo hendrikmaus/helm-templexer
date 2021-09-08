@@ -1,3 +1,4 @@
 /target
 .idea
 tests/data/manifests
+tests/data/test_config_*
