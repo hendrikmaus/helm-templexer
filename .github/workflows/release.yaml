@@ -21,12 +21,16 @@ jobs:
         with:
           sharedKey: shared-cache
       - name: Compile and release
-        uses: rust-build/rust-build.action@v1.1.0
+        # Switch back to the upstream action once https://github.com/rust-build/rust-build.action/pull/17 was released
+        #uses: rust-build/rust-build.action@v1.1.0
+        uses: hendrikmaus/rust-build.action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: ./
           EXTRA_FILES: "README.md"
+          # New feature which will be introduced to upstream by https://github.com/rust-build/rust-build.action/pull/17
+          ARCHIVE_TYPES: "tar.gz zip"
   publish-cratesio:
     name: Publish to crates.io
     runs-on: ubuntu-20.04
