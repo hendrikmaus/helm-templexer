@@ -322,7 +322,6 @@ mod tests {
     fn get_config() -> Config {
         Config {
             version: "v2".to_string(),
-            helm_version: None,
             enabled: Option::from(true),
             chart: Default::default(),
             namespace: None,

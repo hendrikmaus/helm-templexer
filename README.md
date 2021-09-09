@@ -2,6 +2,8 @@
 
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
+> The `helm-templexer` wraps **Helm v3+**, please ensure that it is installed and in the `PATH`.
+
 ```shell
 cat > my-app.yaml <<EOF
 version: v2
@@ -44,7 +46,6 @@ All paths are evaluated relative to the configuration file during execution.
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
 | `version`            | Schema version to use                                                                                                                                                                                                                                                              |  **required** |             | `"v2"`                               |
-| `helm_version`       | SemVer version constraint to require                                                                                                                                                                                                                                               |    optional   | `~3`        |                                      |
 | `enabled`            | Whether to render deployments or not                                                                                                                                                                                                                                               |    optional   | `true`      |                                      |
 | `chart`              | Path to the chart to render                                                                                                                                                                                                                                                        |  **required** |             | `"path/to/some-chart"`               |
 | `namespace`          | Namespace to pass on to `helm`; when omitted, no namespace is passed                                                                                                                                                                                                               |    optional   | `""`        |                                      |

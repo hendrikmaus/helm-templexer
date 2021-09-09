@@ -9,9 +9,6 @@ pub struct Config {
     /// Schema version to use
     pub version: String,
 
-    /// (not implemented) Optional Helm SemVer version constraint to validate against
-    pub helm_version: Option<String>,
-
     /// Activate/deactivate rendering of contained deployments
     pub enabled: Option<bool>,
 
@@ -234,7 +231,6 @@ mod tests {
     fn get_config() -> Config {
         Config {
             version: "v2".to_string(),
-            helm_version: None,
             enabled: Some(true),
             chart: Default::default(),
             namespace: None,
