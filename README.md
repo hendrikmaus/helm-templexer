@@ -10,6 +10,8 @@ release_name: my-app
 output_path: manifests
 deployments:
   - name: edge
+  - name: stage
+  - name: prod
 EOF
 
 helm-templexer render my-app.yaml
@@ -20,7 +22,13 @@ Outcome:
 ```text
 ❯ exa -T manifests
 manifests
-└── edge
+├── edge
+│  └── my-app
+│     └── manifest.yaml
+├── prod
+│  └── my-app
+│     └── manifest.yaml
+└── stage
    └── my-app
       └── manifest.yaml
 ```
