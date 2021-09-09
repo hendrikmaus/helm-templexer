@@ -149,7 +149,7 @@ The `mv` to `/usr/bin` might require `sudo`.
 
 #### Validate Against Checksum
 
-To validate the downloadede **archive** against the checksum:
+To validate the downloaded **archive** against the checksum:
 
 ```shell
 wget https://github.com/hendrikmaus/helm-templexer/releases/download/$VERSION/helm-templexer_$VERSION_x86_64-$BINARY.tar.gz
