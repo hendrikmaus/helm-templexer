@@ -24,7 +24,10 @@ impl ValidateCmd {
                 ..Default::default()
             };
 
-            Config::load(&file)?.validate(&opts)?;
+            Config::load(file)?
+                .switch_working_directory(file)?
+                .validate(&opts)?
+                .reset_working_directory()?;
         }
 
         Ok(())

@@ -46,14 +46,14 @@ impl RenderCmd {
         for file in &self.opts.input_files {
             info!("processing {:?}", file);
 
-            let cfg = Config::load(&file)?;
             let opts = ValidationOpts {
                 config_file: Some(file.clone()),
                 ..Default::default()
             };
-            cfg.validate(&opts)?;
+            let cfg = Config::load(&file)?;
+            cfg.switch_working_directory(file)?.validate(&opts)?;
 
-            let plan = self.plan(cfg)?;
+            let plan = self.plan(&cfg)?;
 
             if plan.skip {
                 info!("config is disabled (skipped)");
@@ -61,13 +61,15 @@ impl RenderCmd {
             }
 
             self.exec_plan(&plan)?;
+
+            cfg.reset_working_directory()?;
         }
 
         Ok(())
     }
 
     /// Create a plan of commands to execute
-    fn plan(&self, cfg: Config) -> anyhow::Result<Plan> {
+    fn plan(&self, cfg: &Config) -> anyhow::Result<Plan> {
         let mut plan = Plan {
             skip: false,
             pre_commands: Default::default(),
@@ -113,14 +115,14 @@ impl RenderCmd {
             chart.to_string(),
         ];
 
-        if let Some(namespace) = cfg.namespace {
+        if let Some(namespace) = &cfg.namespace {
             base_cmd.push(format!("--namespace={}", namespace))
         }
 
         base_cmd.extend(values);
 
-        if let Some(opts) = cfg.additional_options {
-            base_cmd.extend(opts);
+        if let Some(opts) = &cfg.additional_options {
+            base_cmd.extend(opts.to_owned());
         }
 
         match &self.opts.additional_options {
@@ -128,7 +130,7 @@ impl RenderCmd {
             None => (),
         }
 
-        for d in cfg.deployments {
+        for d in &cfg.deployments {
             if self.opts.filter.is_some()
                 && !self.is_name_filtered(
                     self.opts
@@ -329,6 +331,7 @@ mod tests {
             additional_options: None,
             values: None,
             deployments: vec![],
+            original_working_directory: Default::default(),
         }
     }
 
@@ -364,7 +367,7 @@ mod tests {
         cfg.enabled = Option::from(false);
         let cmd = get_cmd();
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         assert_eq!(true, res.skip);
     }
 
@@ -386,7 +389,7 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
             --values=some-base.yaml --no-hooks --debug --values=edge.yaml --set=env=edge";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
@@ -412,7 +415,7 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         assert_eq!(None, res.commands.get("edge"));
     }
 
@@ -429,7 +432,7 @@ mod tests {
         cfg.deployments = vec![deployment];
 
         let cmd = get_cmd();
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template edge-release charts/some-chart";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
@@ -460,7 +463,7 @@ mod tests {
         cmd.opts.additional_options =
             Option::from(vec!["--set-string=image.tag=424242a".to_string()]);
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default \
             --values=some-base.yaml --no-hooks --debug --set-string=image.tag=424242a";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
@@ -486,7 +489,7 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.update_dependencies = true;
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm dependencies update charts/some-chart";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
@@ -530,7 +533,7 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("edge".to_string());
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let expected_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
         let expected_helm_cmd: Vec<String> = expected_helm_cmd
             .split_whitespace()
@@ -573,7 +576,7 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("^prod".to_string());
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
         let prod_as_e1_deployment_expected_helm_cmd =
             "helm template some-release charts/some-chart --namespace=default";
         let prod_eu_w4_deployment_expected_helm_cmd =
@@ -640,7 +643,7 @@ mod tests {
         let mut cmd = get_cmd();
         cmd.opts.filter = Option::from("eu_w4".to_string());
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
 
         let edge_eu_w4_deployment_expected_helm_cmd =
             "helm template some-release charts/some-chart --namespace=default";
@@ -695,7 +698,7 @@ mod tests {
 
         cmd.opts.pipe = Option::from(pipe_command);
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
 
         let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
 
@@ -728,7 +731,7 @@ mod tests {
 
         cmd.opts.pipe = Option::from(pipe_command);
 
-        let res = cmd.plan(cfg).unwrap();
+        let res = cmd.plan(&cfg).unwrap();
 
         let base_helm_cmd = "helm template some-release charts/some-chart --namespace=default";
 

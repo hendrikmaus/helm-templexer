@@ -36,6 +36,12 @@ pub struct Config {
 
     /// List of deployments to render given Chart
     pub deployments: Vec<Deployment>,
+
+    /// Utility field to store the working directory the templxeer started in
+    /// Used to return to the origin after processing each configuration file, as we switch
+    /// working directory every time
+    #[serde(skip)]
+    pub original_working_directory: PathBuf,
 }
 
 #[derive(Deserialize, Debug)]
@@ -69,34 +75,59 @@ impl Config {
         Self::check_file_exists_and_readable(file.as_ref())?;
 
         let cfg = std::fs::read_to_string(&file)?;
-        let cfg = serde_yaml::from_str::<Config>(&cfg)
+        let mut cfg = serde_yaml::from_str::<Config>(&cfg)
             .map_err(|err| format_serde_error::SerdeError::new(cfg.clone(), err))?;
+        cfg.original_working_directory = std::env::current_dir()?;
+
         Ok(cfg)
     }
 
+    /// Change the working directory to the place where the config file is, so that all
+    /// paths are relative to the config file instead of the location where the templexer is called from
+    pub fn switch_working_directory(&self, config_file: &Path) -> anyhow::Result<&Self> {
+        let base_path = config_file.canonicalize()?;
+        log::trace!(
+            "absolute path of {:?} discovered as {:?}",
+            config_file,
+            base_path
+        );
+
+        let base_path = base_path.parent().ok_or_else(|| {
+            anyhow!(
+                "could not determine base path of given configuration file {:?}",
+                config_file
+            )
+        })?;
+
+        log::trace!(
+            "base path of {:?} discovered as {:?}",
+            config_file,
+            base_path
+        );
+
+        // if we're already next to the config file, the base path will be empty
+        if base_path.components().next().is_some() {
+            log::trace!("changing base path for execution to {:?}", base_path);
+            std::env::set_current_dir(base_path)?;
+        }
+
+        Ok(self)
+    }
+
+    /// Reset the working directory to where the templexer started from
+    /// This needs to be called after each input file
+    pub fn reset_working_directory(&self) -> std::io::Result<&Self> {
+        std::env::set_current_dir(&self.original_working_directory)?;
+        Ok(self)
+    }
+
     /// Validate the loaded configuration file
-    pub fn validate(&self, opts: &ValidationOpts) -> anyhow::Result<()> {
+    /// Make sure to switch the working directory and reset it afterwards using `switch_working_directory` and `reset_working_directory`.
+    pub fn validate(&self, opts: &ValidationOpts) -> anyhow::Result<&Self> {
         if let Some(enabled) = self.enabled {
             if !enabled && opts.skip_disabled {
                 info!("Skipped validation of disabled file");
-                return Ok(());
-            }
-        }
-
-        if let Some(config_file) = &opts.config_file {
-            // change the working directory to the place where the config file is, so that all
-            // paths are relative to the config file instead of the location where the templexer is called from
-            let base_path = config_file.parent().ok_or_else(|| {
-                anyhow!(
-                    "could not determine base path of given configuration file {:?}",
-                    config_file
-                )
-            })?;
-
-            // if we're already next to the config file, the base path will be empty
-            if base_path.components().next().is_some() {
-                log::trace!("changing base path for execution to {:?}", base_path);
-                std::env::set_current_dir(base_path)?;
+                return Ok(self);
             }
         }
 
@@ -105,7 +136,7 @@ impl Config {
         self.check_schema_version()?;
         self.check_if_at_least_one_deployment_is_enabled()?;
 
-        Ok(())
+        Ok(self)
     }
 
     /// Check whether the given input file exists and is readable
@@ -212,6 +243,7 @@ mod tests {
             additional_options: None,
             values: None,
             deployments: vec![],
+            original_working_directory: Default::default(),
         }
     }
 
