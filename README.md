@@ -29,7 +29,9 @@ manifests
 
 Configuration can be provided as YAML format.
 
-> All paths are evaluated relative to the configuration file during execution.
+All paths are evaluated relative to the configuration file during execution.
+
+> Looking for schema `v1`? Please see [helm-templexer 1.x](https://github.com/hendrikmaus/helm-templexer/tree/v1).
 
 | **Parameter**        | **Description**                                                                                                                                                                                                                                                                    | **Condition** | **Default** | **Example**                          |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------:|-------------|--------------------------------------|
@@ -82,7 +84,7 @@ Use `--update-dependencies` to run `helm dependencies update` *once* before star
 helm-templexer render --update-dependencies my-app.yaml
 ```
 
-### Pipe Manifest Output Through Tool(s) Before Writing to File
+### Pipe Manifest Output Through Tool(s) Before Writing to Disk
 
 Use `--pipe` to pass the manifest output through a tool or set of tools before writing to a file.
 
