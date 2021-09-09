@@ -2,16 +2,21 @@ use assert_cmd::prelude::*;
 use cmd_lib::run_fun;
 use std::fs::OpenOptions;
 use std::io::Read;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
 const BIN_NAME: &'static str = env!("CARGO_PKG_NAME");
 
-/// Generate a dummy configuration and dump it to a temporary location on disk
-/// this should be called at the beginning of each test case and concluded with calling `drop_temp_folder`.
-fn generate_config() -> Result<PathBuf, io::Error> {
-    let config = r#"---
+struct Config {
+    temp_dir: PathBuf,
+    path: PathBuf,
+}
+
+impl Config {
+    /// Create a new config in a unique location; can be `drop`'ed after usage
+    fn new() -> anyhow::Result<Self> {
+        let config = r#"---
 version: v2
 enabled: true
 chart: ../nginx-chart
@@ -44,57 +49,59 @@ deployments:
       - ../nginx-chart/values/prod-eu-w4.yaml
 "#;
 
-    let config_folder = run_fun!(mktemp -d "tests/data"/test_config_XXXX)?;
-    let path = format!("{}/config.yaml", config_folder);
-    let mut tmp_file = OpenOptions::new()
-        .write(true)
-        .read(true)
-        .create(true)
-        .open(&path)
-        .unwrap();
+        let config_folder = run_fun!(mktemp -d "tests/data"/test_config_XXXX)?;
+        let path = format!("{}/config.yaml", &config_folder);
+        let mut tmp_file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .open(&path)
+            .unwrap();
 
-    writeln!(tmp_file, "{}", config)?;
+        writeln!(tmp_file, "{}", config)?;
 
-    Ok(PathBuf::from(path))
+        Ok(Config {
+            temp_dir: PathBuf::from(config_folder.to_owned()),
+            path: PathBuf::from(path.to_owned()),
+        })
+    }
 }
 
-/// Drop temporary folder; use at the end of each test case
-fn drop_temp_folder(dir: &str) -> Result<String, io::Error> {
-    Ok(run_fun!(rm -r $dir)?)
+impl Drop for Config {
+    fn drop(&mut self) {
+        std::fs::remove_dir_all(&self.temp_dir)
+            .expect("Failed to drop temporary directory of config")
+    }
 }
 
 #[test]
 fn render_config_example() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    let config = generate_config()?;
+    let config = Config::new()?;
 
-    cmd.arg("render").arg(&config);
+    cmd.arg("render").arg(&config.path);
 
     cmd.assert().success();
 
     // manifests parent folder
-    let manifests_folder = format!("{}/manifests", config.parent().unwrap().to_string_lossy());
+    let manifests_folder = format!("{}/manifests", config.temp_dir.to_string_lossy());
 
     // edge manifests folder
-    let edge_manifests_folder = format!(
-        "{}/manifests/edge-eu-w4",
-        config.parent().unwrap().to_string_lossy()
-    );
+    let edge_manifests_folder =
+        format!("{}/manifests/edge-eu-w4", config.temp_dir.to_string_lossy());
 
     let stage_manifest_folder = format!(
         "{}/manifests/stage-eu-w4",
-        config.parent().unwrap().to_string_lossy()
+        config.temp_dir.to_string_lossy()
     );
 
-    let prod_manifest_folder = format!(
-        "{}/manifests/prod-eu-w4",
-        config.parent().unwrap().to_string_lossy()
-    );
+    let prod_manifest_folder =
+        format!("{}/manifests/prod-eu-w4", config.temp_dir.to_string_lossy());
 
     let next_edge_manifest_folder = format!(
         "{}/manifests/next-edge-eu-w4",
-        config.parent().unwrap().to_string_lossy()
+        config.temp_dir.to_string_lossy()
     );
 
     // assert that all the deployment directories exist
@@ -125,10 +132,10 @@ fn render_config_example() -> anyhow::Result<()> {
 
     let edge_rendered_output = format!(
         "{}/manifests/edge-eu-w4/my-app/manifest.yaml",
-        config.parent().unwrap().to_string_lossy()
+        config.temp_dir.to_string_lossy()
     );
 
-    let mut edge_deployment_yaml = std::fs::File::open(edge_rendered_output).unwrap();
+    let mut edge_deployment_yaml = std::fs::File::open(edge_rendered_output)?;
     let mut contents = "".to_string();
     edge_deployment_yaml.read_to_string(&mut contents)?;
     assert_eq!(contents.contains("image: \"nginx:latest\""), true);
@@ -138,11 +145,6 @@ fn render_config_example() -> anyhow::Result<()> {
         include_str!("../../tests/data/rendered_manifests/edge-eu-w4/my-app/manifest.yaml")
     );
 
-    // // todo extend assertions here while changing the chart under test
-    // // todo this test could also benefit from some utility functions/macros to make it less verbose
-
-    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
-
     Ok(())
 }
 
@@ -150,18 +152,20 @@ fn render_config_example() -> anyhow::Result<()> {
 fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    let config = generate_config()?;
+    let config = Config::new()?;
 
-    cmd.arg("render").arg("--pipe=grep 'image'").arg(&config);
+    cmd.arg("render")
+        .arg("--pipe=grep 'image'")
+        .arg(&config.path);
 
     cmd.assert().success();
 
     let edge_rendered_output = format!(
         "{}/manifests/edge-eu-w4/my-app/manifest.yaml",
-        config.parent().unwrap().to_string_lossy()
+        config.temp_dir.to_string_lossy()
     );
 
-    let mut yaml = std::fs::File::open(edge_rendered_output).unwrap();
+    let mut yaml = std::fs::File::open(edge_rendered_output)?;
 
     let mut contents = "".to_string();
     yaml.read_to_string(&mut contents)?;
@@ -172,8 +176,6 @@ fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
         "image: \"nginx:latest\"\n          imagePullPolicy: IfNotPresent\n"
     );
 
-    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
-
     Ok(())
 }
 
@@ -181,21 +183,21 @@ fn pipe_output_to_a_tool_that_exists() -> anyhow::Result<()> {
 fn pipe_output_to_multiple_tools() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
 
-    let config = generate_config().unwrap();
+    let config = Config::new()?;
 
     cmd.arg("render")
         .arg("--pipe=grep 'image'")
         .arg("--pipe=grep 'imagePullPolicy'")
-        .arg(&config);
+        .arg(&config.path);
 
     cmd.assert().success();
 
     let edge_rendered_output = format!(
         "{}/manifests/edge-eu-w4/my-app/manifest.yaml",
-        config.parent().unwrap().to_string_lossy()
+        config.temp_dir.to_string_lossy()
     );
 
-    let mut yaml = std::fs::File::open(edge_rendered_output).unwrap();
+    let mut yaml = std::fs::File::open(edge_rendered_output)?;
 
     let mut contents = "".to_string();
     yaml.read_to_string(&mut contents)?;
@@ -203,23 +205,31 @@ fn pipe_output_to_multiple_tools() -> anyhow::Result<()> {
     // assert that the output contains only imagePullPolicy related content
     assert_eq!(contents.trim_start(), "imagePullPolicy: IfNotPresent\n");
 
-    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
-
     Ok(())
 }
 
 #[test]
 fn pipe_output_to_a_tool_that_doesnt_exist() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let config = Config::new()?;
 
-    let config = generate_config().unwrap();
-
-    cmd.arg("render").arg("--pipe=xyz 'image'").arg(&config);
+    cmd.arg("render")
+        .arg("--pipe=xyz 'image'")
+        .arg(&config.path);
 
     // the binary execution should fail because xyz tool doesn't exist.
     cmd.assert().failure();
 
-    drop_temp_folder(&format!("{}", config.parent().unwrap().to_string_lossy()))?;
+    Ok(())
+}
+
+#[test]
+fn render_multiple_files() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let config0 = Config::new()?;
+    let config1 = Config::new()?;
+    cmd.arg("render").arg(&config0.path).arg(&config1.path);
+    cmd.assert().success();
 
     Ok(())
 }
