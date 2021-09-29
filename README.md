@@ -1,5 +1,7 @@
 # ⎈ Helm Templexer
 
+[![crates.io](https://img.shields.io/crates/v/helm-templexer.svg)](https://crates.io/crates/helm-templexer)
+
 Render Helm charts for multiple environments with _explicit config_ while keeping the overhead at ease.
 
 > The `helm-templexer` wraps **Helm v3+**, please ensure that it is installed and in the `PATH`.
