@@ -9,12 +9,17 @@ env:
 
 jobs:
   release-binaries:
-    name: Release ${{ matrix.target }}
+    name: Release ${{ matrix.arch }}-${{ matrix.os }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-unknown-linux-musl, x86_64-apple-darwin]
+        arch:
+          - aarch64
+          - x86_64
+        os:
+          - unknown-linux-gnu
+          - apple-darwin
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1
@@ -24,7 +29,7 @@ jobs:
         uses: rust-build/rust-build.action@v1.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUSTTARGET: ${{ matrix.target }}
+          RUSTTARGET: ${{ matrix.arch }}-${{ matrix.os }}
           SRC_DIR: ./
           EXTRA_FILES: "README.md"
           ARCHIVE_TYPES: "tar.gz zip"
