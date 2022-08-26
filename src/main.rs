@@ -45,6 +45,8 @@ pub struct ValidateCmdOpts {
     /// Configuration file(s) to validate (supported format: yaml)
     input_files: Vec<PathBuf>,
 
+    // Future use
+    #[allow(dead_code)]
     #[structopt(short, long, about = "Skip validation if `enabled` is set to false")]
     skip_disabled: bool,
 }
