@@ -42,15 +42,15 @@ jobs:
       - shell: bash
         run: |
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../helm-templexer-${{ matrix.target }}.tar.gz helm-templexer*
+          tar czvf ../../../helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz helm-templexer*
           cd -
       - uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./helm-templexer-${{ matrix.target }}.tar.gz
-          asset_name: helm-templexer-${{ matrix.target }}.tar.gz
+          asset_path: ./helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          asset_name: helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
   publish-cratesio:
     name: Publish to crates.io
