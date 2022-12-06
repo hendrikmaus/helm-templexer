@@ -40,6 +40,7 @@ jobs:
           sharedKey: shared-cache
       - uses: actions-rs/cargo@v1
         with:
+          use-cross: true
           command: build
           args: --release --target ${{ matrix.target }}
       - shell: bash
