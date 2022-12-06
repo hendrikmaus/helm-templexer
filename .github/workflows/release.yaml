@@ -1,7 +1,9 @@
 name: Build
 
 on:
-  pull_request:
+  release:
+    types:
+      - published
 
 env:
   REGISTRY: ghcr.io
