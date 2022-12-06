@@ -7,10 +7,10 @@ on:
 
 jobs:
   update_release_draft:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Update Release Draft
     steps:
-      - uses: actions/checkout@v2
-      - uses: release-drafter/release-drafter@v5
+      - uses: actions/checkout@v3.1.0
+      - uses: release-drafter/release-drafter@v5.21.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
