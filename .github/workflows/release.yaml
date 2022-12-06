@@ -12,20 +12,26 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch:
-          - aarch64
-          - x86_64
-        os:
-          - unknown-linux-musl
-          - apple-darwin
-          - pc-windows-gnu
+        # arch:
+        #   - aarch64
+        #   - x86_64
+        # os:
+        #   - unknown-linux-musl
+        #   - apple-darwin
+        #   - pc-windows-gnu
+        include:
+          - target: x86_64-pc-windows-gnu
+          - target: x86_64-unknown-linux-gnu
+          - target: x86_64-apple-darwin
+          - target: aarch64-unknown-linux-gnu
+          - target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v2.5.0
       - name: Compile
         id: compile
         uses: rust-build/rust-build.action@v1.4.0
         with:
-          RUSTTARGET: ${{ matrix.arch }}-${{ matrix.os }}
+          RUSTTARGET: ${{ matrix.target }}
           UPLOAD_MODE: none
       - name: Upload artifact
         uses: actions/upload-artifact@v3
