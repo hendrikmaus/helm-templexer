@@ -31,6 +31,7 @@ jobs:
           profile: minimal
           override: true
           target: ${{ matrix.target }}
+      - uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
