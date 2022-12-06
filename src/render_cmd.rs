@@ -50,7 +50,7 @@ impl RenderCmd {
                 config_file: Some(file.clone()),
                 ..Default::default()
             };
-            let cfg = Config::load(&file)?;
+            let cfg = Config::load(file)?;
             cfg.switch_working_directory(file)?.validate(&opts)?;
 
             let plan = self.plan(&cfg)?;
