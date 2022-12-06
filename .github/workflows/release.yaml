@@ -22,7 +22,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
           - target: x86_64-apple-darwin
           - target: aarch64-unknown-linux-gnu
-          - target: aarch64-apple-darwin
+          # - target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
