@@ -25,7 +25,7 @@ jobs:
         id: compile
         uses: rust-build/rust-build.action@v1.4.0
         with:
-          RUSTTARGET: ${{ matrix.arch }}-$ {{ matrix.os }}
+          RUSTTARGET: ${{ matrix.arch }}-${{ matrix.os }}
           UPLOAD_MODE: none
       - name: Upload artifact
         uses: actions/upload-artifact@v3
