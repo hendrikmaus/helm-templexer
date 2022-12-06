@@ -10,18 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # arch:
-        #   - aarch64
-        #   - x86_64
-        # os:
-        #   - unknown-linux-musl
-        #   - apple-darwin
-        #   - pc-windows-gnu
         include:
           - target: x86_64-pc-windows-gnu
           - target: x86_64-unknown-linux-gnu
-          # - target: x86_64-apple-darwin
           - target: aarch64-unknown-linux-gnu
+          # see <https://github.com/cross-rs/cross-toolchains
+          # - target: x86_64-apple-darwin
           # - target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v1
@@ -39,7 +33,7 @@ jobs:
       - shell: bash
         run: |
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../helm-templexer-${{ matrix.target }}.tar.gz helm-templexer
+          tar czvf ../../../helm-templexer-${{ matrix.target }}.tar.gz helm-templexer*
           cd -
       - uses: actions/upload-release-asset@v1
         env:
