@@ -1,3 +1,5 @@
+name: Build
+
 on:
   release:
     types:
@@ -9,41 +11,62 @@ env:
 
 jobs:
   release-binaries:
-    name: Release ${{ matrix.arch }}-${{ matrix.os }}
-    runs-on: ubuntu-20.04
+    name: Release ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - aarch64
-          - x86_64
-        os:
-          - unknown-linux-gnu
-          - apple-darwin
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: x86_64-apple-darwin
+            os: macos-11
+          - target: aarch64-apple-darwin
+            os: macos-11
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
     steps:
-      - uses: actions/checkout@v2
-      - uses: Swatinem/rust-cache@v1
+      - uses: actions/checkout@v3.1.0
+      - uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2.2.0
         with:
           sharedKey: shared-cache
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.2.0
+      - uses: actions-rs/cargo@v1.0.1
+        with:
+          use-cross: false
+          command: build
+          args: --release --target ${{ matrix.target }}
+      - shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czvf ../../../helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz helm-templexer*
+          cd -
+      - uses: actions/upload-release-asset@v1.0.2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUSTTARGET: ${{ matrix.arch }}-${{ matrix.os }}
-          SRC_DIR: ./
-          EXTRA_FILES: "README.md"
-          ARCHIVE_TYPES: "tar.gz zip"
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          asset_name: helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          asset_content_type: application/gzip
   publish-cratesio:
     name: Publish to crates.io
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3.1.0
+      - uses: actions-rs/toolchain@v1.0.6
         with:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2.2.0
         with:
           sharedKey: shared-cache
       - uses: katyo/publish-crates@v1
@@ -51,22 +74,22 @@ jobs:
           registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
   containerize:
     name: Build & push container image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3.1.0
+      - uses: actions-rs/toolchain@v1.0.6
         with:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2.2.0
         with:
           sharedKey: shared-cache
       - name: Build binary
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.1
         with:
           command: build
           args: --release --target x86_64-unknown-linux-musl
@@ -77,20 +100,20 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v2.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4.1.1
         with:
           images: |
             ${{ env.IMAGE_NAME }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v3.2.0
         with:
           context: .
           push: true
