@@ -1,12 +1,15 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
 {
-	"name": "Debian",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
-	"remoteUser": "vscode",
-	// "features": {
-	// 	"rust": "latest"
-	// },
+	"name": "Rust",
+	"image": "mcr.microsoft.com/devcontainers/rust:1-bullseye",
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "sh .devcontainer/provision.sh",
+	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -17,4 +20,9 @@
 			]
 		}
 	}
+	// "hostRequirements": {
+	// 	"cpus": 4
+	// }
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
 }
