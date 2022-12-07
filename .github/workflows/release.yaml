@@ -1,9 +1,9 @@
 name: Build
 
 on:
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - master
 
 env:
   REGISTRY: ghcr.io
