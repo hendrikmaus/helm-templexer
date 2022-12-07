@@ -1,5 +1,6 @@
 use assert_cmd::prelude::*;
 use cmd_lib::run_fun;
+use predicates::prelude::predicate;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
@@ -231,5 +232,17 @@ fn render_multiple_files() -> anyhow::Result<()> {
     cmd.arg("render").arg(&config0.path).arg(&config1.path);
     cmd.assert().success();
 
+    Ok(())
+}
+
+#[test]
+fn errors_are_logged() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("render")
+        .arg("./tests/data/config_invalid_helm_option.yaml");
+    let output = cmd.assert().failure();
+    output.stderr(predicate::str::contains(
+        "expected at most two arguments, unexpected arguments: INVALID-OPTION",
+    ));
     Ok(())
 }

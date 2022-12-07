@@ -276,11 +276,19 @@ impl RenderCmd {
         debug!("stderr:\n{}", result.stderr_str());
 
         if !result.exit_status.success() || result.stdout_str().contains("exit status 1") {
-            bail!(
-                "failed while running `helm`:\n\n\t{}\n\n{}",
-                cmd,
-                result.stdout_str()
-            );
+            let mut error_msg = format!("failed while running:\n    {cmd}");
+
+            let stderr = result.stderr_str();
+            if !stderr.is_empty() {
+                error_msg.push_str(&format!("\n\nstderr:\n    {stderr}"));
+            }
+
+            let stdout = result.stdout_str();
+            if !stdout.is_empty() {
+                error_msg.push_str(&format!("\n\nstdout:\n    {stdout}"));
+            }
+
+            bail!(error_msg);
         }
 
         output
