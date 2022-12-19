@@ -70,9 +70,14 @@ jobs:
         env:
           TAG_NAME: "${{ needs.release-please.outputs.tag_name }}"
         run: |
+          archive_name="helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz"
+          
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz helm-templexer*
+          tar czvf ../../../"${archive_name}" helm-templexer*
           cd -
+          
+          openssl dgst -sha256 -r "${archive_name}" \
+            | awk '{print $1}' > "${archive_name}.sha256"
       - uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -80,6 +85,14 @@ jobs:
           upload_url: ${{ needs.release-please.outputs.upload_url }}
           asset_path: ./helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz
           asset_name: helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz
+          asset_content_type: application/gzip
+      - uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.release-please.outputs.upload_url }}
+          asset_path: ./helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz.sha256
+          asset_name: helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz.sha256
           asset_content_type: application/gzip
 
   publish-cratesio:
