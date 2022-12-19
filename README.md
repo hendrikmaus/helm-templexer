@@ -139,13 +139,13 @@ COPY --from=helm-templexer-provider /usr/bin/helm /usr/bin
 
 ### Pre-compiled Binary
 
-Please set/replace `$BINARY` and `$VERSION` accordingly.
+Please set/replace `$TARGET` and `$VERSION` accordingly.
 
 ```shell
-wget https://github.com/hendrikmaus/helm-templexer/releases/download/$VERSION/helm-templexer_$VERSION_x86_64-$BINARY.tar.gz -O - | tar xz && mv helm-templexer /usr/bin/helm-templexer
+wget https://github.com/hendrikmaus/helm-templexer/releases/download/v$VERSION/helm-templexer-$VERSION-$TARGET.tar.gz -O - | tar xz && mv helm-templexer /usr/bin/helm-templexer
 ```
 
-For example `VERSION=2.0.0` and `BINARY=unknown-linux-musl` | `BINARY=apple-darwin`
+For example `VERSION=2.0.0` and `TARGET=aarch64-apple-darwin`
 
 The `mv` to `/usr/bin` might require `sudo`.
 
@@ -154,8 +154,8 @@ The `mv` to `/usr/bin` might require `sudo`.
 To validate the downloaded **archive** against the checksum:
 
 ```shell
-wget https://github.com/hendrikmaus/helm-templexer/releases/download/$VERSION/helm-templexer_$VERSION_x86_64-$BINARY.tar.gz
-echo "$(wget https://github.com/hendrikmaus/helm-templexer/releases/download/$VERSION/helm-templexer_$VERSION_x86_64-$BINARY.tar.gz.sha256sum -O -) helm-templexer_$VERSION_x86_64-$BINARY.tar.gz" | sha256sum --check --strict --status
+wget https://github.com/hendrikmaus/helm-templexer/releases/download/v$VERSION/helm-templexer-$VERSION-$TARGET.tar.gz
+echo "$(wget https://github.com/hendrikmaus/helm-templexer/releases/download/v$VERSION/helm-templexer-$VERSION-$TARGET.tar.gz.sha256 -O -) helm-templexer-$VERSION-$TARGET.tar.gz" | sha256sum --check --strict --status
 ```
 
 ### Homebrew
