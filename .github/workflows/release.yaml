@@ -16,6 +16,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       upload_url: ${{ steps.release.outputs.upload_url }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - name: Release Please
         uses: google-github-actions/release-please-action@v3.6.1
@@ -63,17 +64,20 @@ jobs:
           command: build
           args: --release --target ${{ matrix.target }}
       - shell: bash
+        env:
+          TAG_NAME: "${{ needs.release-please.outputs.tag_name }}"
         run: |
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz helm-templexer*
+          tar czvf ../../../helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz helm-templexer*
           cd -
       - uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TAG_NAME: "${{ needs.release-please.outputs.tag_name }}"
         with:
           upload_url: ${{ needs.release-please.outputs.upload_url }}
-          asset_path: ./helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
-          asset_name: helm-templexer-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          asset_path: ./helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz
+          asset_name: helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
 
   publish-cratesio:
