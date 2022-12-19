@@ -17,6 +17,9 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       upload_url: ${{ steps.release.outputs.upload_url }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      major: ${{ steps.release.outputs.major }}
+      minor: ${{ steps.release.outputs.minor }}
+      patch: ${{ steps.release.outputs.patch }}
     steps:
       - name: Release Please
         uses: google-github-actions/release-please-action@v3.6.1
@@ -73,11 +76,10 @@ jobs:
       - uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          TAG_NAME: "${{ needs.release-please.outputs.tag_name }}"
         with:
           upload_url: ${{ needs.release-please.outputs.upload_url }}
-          asset_path: ./helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz
-          asset_name: helm-templexer-${TAG_NAME#v}-${{ matrix.target }}.tar.gz
+          asset_path: ./helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz
+          asset_name: helm-templexer-${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
 
   publish-cratesio:
