@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.5...v2.0.6) (2022-12-19)
+
+
+### Bug Fixes
+
+* **cd:** generate and upload checksum files for release artifacts ([#113](https://github.com/hendrikmaus/helm-templexer/issues/113)) ([a92f9bc](https://github.com/hendrikmaus/helm-templexer/commit/a92f9bcfa29e450013d0097b944d9be96b5757c6))
+
 ## [2.0.5](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.4...v2.0.5) (2022-12-19)
 
 
