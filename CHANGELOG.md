@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.5](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.4...v2.0.5) (2022-12-19)
+
+
+### Bug Fixes
+
+* **cd:** use gha expressions instead of env var ([#111](https://github.com/hendrikmaus/helm-templexer/issues/111)) ([f1e3435](https://github.com/hendrikmaus/helm-templexer/commit/f1e34356a8cea00e5da3cbb4f76cd33185b63e05))
+
 ## [2.0.4](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.3...v2.0.4) (2022-12-19)
 
 
