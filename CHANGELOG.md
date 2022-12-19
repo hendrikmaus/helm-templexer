@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.3...v2.0.4) (2022-12-19)
+
+
+### Bug Fixes
+
+* **cd:** include tag name in the release artifacts ([#109](https://github.com/hendrikmaus/helm-templexer/issues/109)) ([fcfe5db](https://github.com/hendrikmaus/helm-templexer/commit/fcfe5db3403dd32ff13a425819ebbf059b28276e))
+
 ## [2.0.3](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.2...v2.0.3) (2022-12-19)
 
 
