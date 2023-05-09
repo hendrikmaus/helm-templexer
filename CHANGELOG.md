@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.7](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.6...v2.0.7) (2023-05-09)
+
+
+### Bug Fixes
+
+* resolve remove_dir_all vuln ([#116](https://github.com/hendrikmaus/helm-templexer/issues/116)) ([760ccf1](https://github.com/hendrikmaus/helm-templexer/commit/760ccf1451703009b0d716195572aaab2f028299))
+
 ## [2.0.6](https://github.com/hendrikmaus/helm-templexer/compare/v2.0.5...v2.0.6) (2022-12-19)
 
 
